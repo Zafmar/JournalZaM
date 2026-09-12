@@ -7,6 +7,10 @@ import re
 import uuid
 import sqlite3
 import shutil
+import json
+import hashlib
+import secrets
+import hmac
 from pathlib import Path
 from datetime import datetime, date, timedelta
 
@@ -18,12 +22,158 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QMessageBox, QFileDialog, QColorDialog,
-    QInputDialog, QTableWidgetItem, QHeaderView, QListWidgetItem
+    QInputDialog, QTableWidgetItem, QHeaderView, QListWidgetItem, QLineEdit
 )
 
 BASE_DIR = Path(__file__).resolve().parent
 UI_FILE = BASE_DIR / "JournalZaM.ui"
 DB_FILE = BASE_DIR / "JournalZaM.db"
+AUTH_FILE = BASE_DIR / ".journalzam_auth.json"
+PBKDF2_ITERATIONS = 300_000
+
+
+def hash_password(password, salt):
+    """Return a secure PBKDF2-HMAC-SHA256 hash for the supplied password."""
+    return hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt,
+        PBKDF2_ITERATIONS
+    )
+
+
+def save_password(password):
+    """Create a random salt and store only the salt + password hash."""
+    salt = secrets.token_bytes(32)
+    password_hash = hash_password(password, salt)
+
+    payload = {
+        "salt": salt.hex(),
+        "hash": password_hash.hex(),
+        "iterations": PBKDF2_ITERATIONS
+    }
+
+    AUTH_FILE.write_text(
+        json.dumps(payload, indent=2),
+        encoding="utf-8"
+    )
+
+
+def verify_password(password):
+    """Check a password against the locally stored salted hash."""
+    try:
+        payload = json.loads(AUTH_FILE.read_text(encoding="utf-8"))
+        salt = bytes.fromhex(payload["salt"])
+        expected_hash = bytes.fromhex(payload["hash"])
+        iterations = int(payload.get("iterations", PBKDF2_ITERATIONS))
+
+        actual_hash = hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode("utf-8"),
+            salt,
+            iterations
+        )
+
+        return hmac.compare_digest(actual_hash, expected_hash)
+
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        QMessageBox.critical(
+            None,
+            "JournalZaM",
+            "The local password file could not be read.\n\n"
+            "JournalZaM will not open until the authentication file is valid."
+        )
+        return False
+
+
+def create_initial_password():
+    """First-run password creation."""
+    while True:
+        password, ok = QInputDialog.getText(
+            None,
+            "JournalZaM — Create Password",
+            "This is the first protected launch.\n\n"
+            "Create a password for JournalZaM:",
+            QLineEdit.Password
+        )
+
+        if not ok:
+            return False
+
+        if len(password) < 6:
+            QMessageBox.warning(
+                None,
+                "Password too short",
+                "Please use at least 6 characters."
+            )
+            continue
+
+        confirm, ok = QInputDialog.getText(
+            None,
+            "JournalZaM — Confirm Password",
+            "Enter the same password again:",
+            QLineEdit.Password
+        )
+
+        if not ok:
+            return False
+
+        if password != confirm:
+            QMessageBox.warning(
+                None,
+                "Passwords do not match",
+                "The two passwords were different. Please try again."
+            )
+            continue
+
+        save_password(password)
+
+        QMessageBox.information(
+            None,
+            "Password created",
+            "Your JournalZaM password has been created.\n\n"
+            "Only a salted password hash is stored locally."
+        )
+        return True
+
+
+def authenticate_user():
+    """
+    Ask for the JournalZaM password before the main window or database is opened.
+    Returns True only after successful authentication.
+    """
+    if not AUTH_FILE.exists():
+        return create_initial_password()
+
+    for attempt in range(3):
+        password, ok = QInputDialog.getText(
+            None,
+            "JournalZaM — Locked",
+            "Enter your password:",
+            QLineEdit.Password
+        )
+
+        if not ok:
+            return False
+
+        if verify_password(password):
+            return True
+
+        remaining = 2 - attempt
+        if remaining > 0:
+            QMessageBox.warning(
+                None,
+                "Incorrect password",
+                f"That password is incorrect.\n\n"
+                f"{remaining} attempt{'s' if remaining != 1 else ''} remaining."
+            )
+
+    QMessageBox.critical(
+        None,
+        "JournalZaM — Locked",
+        "Too many incorrect attempts.\n\nJournalZaM will now close."
+    )
+    return False
 
 
 class JournalWindow(QMainWindow):
@@ -1011,6 +1161,12 @@ class JournalWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setApplicationName("JournalZaM")
+
+    # Authentication happens before JournalWindow is created,
+    # so the journal database is not opened until the password is correct.
+    if not authenticate_user():
+        sys.exit(0)
+
     window = JournalWindow()
     window.show()
     sys.exit(app.exec_())
