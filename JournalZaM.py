@@ -82,23 +82,125 @@ class JournalWindow(QMainWindow):
     # Setup
     # ------------------------------------------------------------------
     def setup_styles_and_navigation(self):
+        # Dynamic style properties must be assigned in Python.
+        # Putting <property name="class"> in a .ui file makes PyQt try to call
+        # widget.setClass(), which does not exist.
         for button in self.nav_buttons:
             button.setProperty("class", "navButton")
             button.setProperty("active", False)
 
-        for b in (self.btnSaveEntry, self.btnRunSearch, self.btnRandomMemory, self.btnOpenCalendarEntry):
+        for label in (self.lblSection1,):
+            label.setProperty("class", "sidebarSection")
+
+        for frame in (
+            self.metaCard,
+            self.editorCard,
+            self.calendarCard,
+            self.calendarPreviewCard,
+            self.journalListCard,
+            self.readingCard,
+            self.galleryHead,
+            self.searchControls,
+            self.memoryCard,
+            self.k1,
+            self.k2,
+            self.k3,
+            self.k4,
+            self.k5,
+            self.settingsCard,
+        ):
+            frame.setProperty("class", "card")
+
+        for b in (
+            self.btnSaveEntry,
+            self.btnRunSearch,
+            self.btnRandomMemory,
+            self.btnOpenCalendarEntry,
+        ):
             b.setProperty("class", "primary")
-        for b in (self.btnClearEntry, self.btnEditSelected, self.btnRefreshGallery, self.btnExportHtml, self.btnBackupDb):
+
+        for b in (
+            self.btnClearEntry,
+            self.btnEditSelected,
+            self.btnRefreshGallery,
+            self.btnExportHtml,
+            self.btnBackupDb,
+        ):
             b.setProperty("class", "secondary")
+
         self.btnDeleteEntry.setProperty("class", "danger")
 
         for b in (
-            self.btnBold, self.btnItalic, self.btnUnderline, self.btnStrike,
-            self.btnTextColor, self.btnHighlight, self.btnAlignLeft,
-            self.btnAlignCenter, self.btnAlignRight, self.btnBullet,
-            self.btnNumbered, self.btnLink, self.btnImage, self.btnUndo, self.btnRedo
+            self.btnBold,
+            self.btnItalic,
+            self.btnUnderline,
+            self.btnStrike,
+            self.btnTextColor,
+            self.btnHighlight,
+            self.btnAlignLeft,
+            self.btnAlignCenter,
+            self.btnAlignRight,
+            self.btnBullet,
+            self.btnNumbered,
+            self.btnLink,
+            self.btnImage,
+            self.btnUndo,
+            self.btnRedo,
         ):
             b.setProperty("class", "tool")
+
+        # Re-polish widgets so the stylesheet immediately reacts to the
+        # dynamic properties assigned above.
+        styled_widgets = (
+            self.nav_buttons
+            + [self.lblSection1]
+            + [
+                self.metaCard,
+                self.editorCard,
+                self.calendarCard,
+                self.calendarPreviewCard,
+                self.journalListCard,
+                self.readingCard,
+                self.galleryHead,
+                self.searchControls,
+                self.memoryCard,
+                self.k1,
+                self.k2,
+                self.k3,
+                self.k4,
+                self.k5,
+                self.settingsCard,
+                self.btnSaveEntry,
+                self.btnRunSearch,
+                self.btnRandomMemory,
+                self.btnOpenCalendarEntry,
+                self.btnClearEntry,
+                self.btnEditSelected,
+                self.btnRefreshGallery,
+                self.btnExportHtml,
+                self.btnBackupDb,
+                self.btnDeleteEntry,
+                self.btnBold,
+                self.btnItalic,
+                self.btnUnderline,
+                self.btnStrike,
+                self.btnTextColor,
+                self.btnHighlight,
+                self.btnAlignLeft,
+                self.btnAlignCenter,
+                self.btnAlignRight,
+                self.btnBullet,
+                self.btnNumbered,
+                self.btnLink,
+                self.btnImage,
+                self.btnUndo,
+                self.btnRedo,
+            ]
+        )
+
+        for widget in styled_widgets:
+            widget.style().unpolish(widget)
+            widget.style().polish(widget)
 
         self.btnWrite.clicked.connect(lambda: self.show_page(0))
         self.btnCalendar.clicked.connect(lambda: self.show_page(1))

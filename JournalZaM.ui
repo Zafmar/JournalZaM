@@ -52,7 +52,7 @@ QScrollArea { border:0; background:transparent; }
        <item><widget class="QLabel" name="lblBrand"><property name="text"><string>JournalZaM</string></property></widget></item>
        <item><widget class="QLabel" name="lblBrandSub"><property name="text"><string>Your private digital memory book</string></property></widget></item>
        <item><spacer name="s1"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>18</height></size></property></spacer></item>
-       <item><widget class="QLabel" name="lblSection1"><property name="text"><string>JOURNAL</string></property><property name="class"><string>sidebarSection</string></property></widget></item>
+       <item><widget class="QLabel" name="lblSection1"><property name="text"><string>JOURNAL</string></property></widget></item>
        <item><widget class="QPushButton" name="btnWrite"><property name="text"><string>✎   Write</string></property></widget></item>
        <item><widget class="QPushButton" name="btnCalendar"><property name="text"><string>▦   Calendar</string></property></widget></item>
        <item><widget class="QPushButton" name="btnJournal"><property name="text"><string>☷   Journal</string></property></widget></item>
@@ -87,7 +87,6 @@ QScrollArea { border:0; background:transparent; }
            <property name="spacing"><number>12</number></property>
            <item>
             <widget class="QFrame" name="metaCard">
-             <property name="class"><string>card</string></property>
              <layout class="QGridLayout">
               <property name="leftMargin"><number>18</number></property><property name="topMargin"><number>15</number></property><property name="rightMargin"><number>18</number></property><property name="bottomMargin"><number>15</number></property>
               <item row="0" column="0"><widget class="QLabel" name="lDate"><property name="text"><string>Date</string></property></widget></item>
@@ -111,7 +110,6 @@ QScrollArea { border:0; background:transparent; }
 
            <item>
             <widget class="QFrame" name="editorCard">
-             <property name="class"><string>card</string></property>
              <layout class="QVBoxLayout">
               <property name="leftMargin"><number>16</number></property><property name="topMargin"><number>14</number></property><property name="rightMargin"><number>16</number></property><property name="bottomMargin"><number>16</number></property>
               <item>
@@ -156,8 +154,8 @@ QScrollArea { border:0; background:transparent; }
          <widget class="QWidget" name="pageCalendar">
           <layout class="QHBoxLayout">
            <property name="spacing"><number>16</number></property>
-           <item><widget class="QFrame" name="calendarCard"><property name="class"><string>card</string></property><layout class="QVBoxLayout"><item><widget class="QCalendarWidget" name="calendarJournal"><property name="gridVisible"><bool>true</bool></property></widget></item></layout></widget></item>
-           <item><widget class="QFrame" name="calendarPreviewCard"><property name="minimumSize"><size><width>390</width><height>0</height></size></property><property name="maximumSize"><size><width>470</width><height>16777215</height></size></property><property name="class"><string>card</string></property><layout class="QVBoxLayout">
+           <item><widget class="QFrame" name="calendarCard"><layout class="QVBoxLayout"><item><widget class="QCalendarWidget" name="calendarJournal"><property name="gridVisible"><bool>true</bool></property></widget></item></layout></widget></item>
+           <item><widget class="QFrame" name="calendarPreviewCard"><property name="minimumSize"><size><width>390</width><height>0</height></size></property><property name="maximumSize"><size><width>470</width><height>16777215</height></size></property><layout class="QVBoxLayout">
             <item><widget class="QLabel" name="lblCalendarDate"><property name="text"><string>Select a day</string></property><property name="styleSheet"><string>font-size:20px;font-weight:850;</string></property></widget></item>
             <item><widget class="QListWidget" name="listCalendarEntries"/></item>
             <item><widget class="QTextEdit" name="txtCalendarPreview"><property name="readOnly"><bool>true</bool></property></widget></item>
@@ -170,11 +168,11 @@ QScrollArea { border:0; background:transparent; }
          <widget class="QWidget" name="pageJournal">
           <layout class="QHBoxLayout">
            <property name="spacing"><number>16</number></property>
-           <item><widget class="QFrame" name="journalListCard"><property name="minimumSize"><size><width>390</width><height>0</height></size></property><property name="maximumSize"><size><width>470</width><height>16777215</height></size></property><property name="class"><string>card</string></property><layout class="QVBoxLayout">
+           <item><widget class="QFrame" name="journalListCard"><property name="minimumSize"><size><width>390</width><height>0</height></size></property><property name="maximumSize"><size><width>470</width><height>16777215</height></size></property><layout class="QVBoxLayout">
             <item><widget class="QLineEdit" name="editJournalFilter"><property name="placeholderText"><string>Filter titles or text...</string></property></widget></item>
             <item><widget class="QListWidget" name="listEntries"/></item>
            </layout></widget></item>
-           <item><widget class="QFrame" name="readingCard"><property name="class"><string>card</string></property><layout class="QVBoxLayout">
+           <item><widget class="QFrame" name="readingCard"><layout class="QVBoxLayout">
             <item><widget class="QLabel" name="lblReadTitle"><property name="text"><string>Select an entry</string></property><property name="styleSheet"><string>font-size:24px;font-weight:900;</string></property></widget></item>
             <item><widget class="QLabel" name="lblReadMeta"><property name="text"><string>—</string></property><property name="styleSheet"><string>color:#6F7F85;</string></property></widget></item>
             <item><widget class="QTextEdit" name="txtReading"><property name="readOnly"><bool>true</bool></property></widget></item>
@@ -186,7 +184,7 @@ QScrollArea { border:0; background:transparent; }
          <!-- GALLERY -->
          <widget class="QWidget" name="pageGallery">
           <layout class="QVBoxLayout">
-           <item><widget class="QFrame" name="galleryHead"><property name="class"><string>card</string></property><layout class="QHBoxLayout"><item><widget class="QLabel" name="lblGalleryInfo"><property name="text"><string>Every picture in your journal, in chronological order.</string></property></widget></item><item><spacer name="gsp"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item><item><widget class="QPushButton" name="btnRefreshGallery"><property name="text"><string>Refresh</string></property></widget></item></layout></widget></item>
+           <item><widget class="QFrame" name="galleryHead"><layout class="QHBoxLayout"><item><widget class="QLabel" name="lblGalleryInfo"><property name="text"><string>Every picture in your journal, in chronological order.</string></property></widget></item><item><spacer name="gsp"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item><item><widget class="QPushButton" name="btnRefreshGallery"><property name="text"><string>Refresh</string></property></widget></item></layout></widget></item>
            <item><widget class="QListWidget" name="listGallery"><property name="viewMode"><enum>QListView::IconMode</enum></property><property name="iconSize"><size><width>180</width><height>130</height></size></property><property name="resizeMode"><enum>QListView::Adjust</enum></property><property name="spacing"><number>12</number></property><property name="wordWrap"><bool>true</bool></property></widget></item>
           </layout>
          </widget>
@@ -194,7 +192,7 @@ QScrollArea { border:0; background:transparent; }
          <!-- SEARCH -->
          <widget class="QWidget" name="pageSearch">
           <layout class="QVBoxLayout">
-           <item><widget class="QFrame" name="searchControls"><property name="class"><string>card</string></property><layout class="QHBoxLayout">
+           <item><widget class="QFrame" name="searchControls"><layout class="QHBoxLayout">
             <item><widget class="QLineEdit" name="editSearch"><property name="placeholderText"><string>Search your entire journal...</string></property></widget></item>
             <item><widget class="QComboBox" name="comboSearchMood"><item><property name="text"><string>Any mood</string></property></item></widget></item>
             <item><widget class="QComboBox" name="comboSearchCategory"><item><property name="text"><string>Any category</string></property></item></widget></item>
@@ -210,7 +208,7 @@ QScrollArea { border:0; background:transparent; }
          <widget class="QWidget" name="pageMemories">
           <layout class="QVBoxLayout">
            <item><layout class="QHBoxLayout"><item><widget class="QPushButton" name="btnRandomMemory"><property name="text"><string>✦ Take me somewhere</string></property></widget></item><item><spacer name="msp"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item></layout></item>
-           <item><widget class="QFrame" name="memoryCard"><property name="class"><string>card</string></property><layout class="QVBoxLayout">
+           <item><widget class="QFrame" name="memoryCard"><layout class="QVBoxLayout">
             <item><widget class="QLabel" name="lblMemoryHeading"><property name="text"><string>On this day</string></property><property name="styleSheet"><string>font-size:24px;font-weight:900;</string></property></widget></item>
             <item><widget class="QListWidget" name="listMemories"/></item>
             <item><widget class="QTextEdit" name="txtMemoryPreview"><property name="readOnly"><bool>true</bool></property></widget></item>
@@ -222,11 +220,11 @@ QScrollArea { border:0; background:transparent; }
          <widget class="QWidget" name="pageStats">
           <layout class="QVBoxLayout">
            <item><layout class="QHBoxLayout">
-            <item><widget class="QFrame" name="k1"><property name="class"><string>card</string></property><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatEntries"><property name="text"><string>0</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#587F73;</string></property></widget></item><item><widget class="QLabel" name="sl1"><property name="text"><string>Total entries</string></property></widget></item></layout></widget></item>
-            <item><widget class="QFrame" name="k2"><property name="class"><string>card</string></property><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatWords"><property name="text"><string>0</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#6E86B7;</string></property></widget></item><item><widget class="QLabel" name="sl2"><property name="text"><string>Words written</string></property></widget></item></layout></widget></item>
-            <item><widget class="QFrame" name="k3"><property name="class"><string>card</string></property><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatStreak"><property name="text"><string>0</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#B68B55;</string></property></widget></item><item><widget class="QLabel" name="sl3"><property name="text"><string>Current streak</string></property></widget></item></layout></widget></item>
-            <item><widget class="QFrame" name="k4"><property name="class"><string>card</string></property><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatRating"><property name="text"><string>—</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#B97878;</string></property></widget></item><item><widget class="QLabel" name="sl4"><property name="text"><string>Average rating</string></property></widget></item></layout></widget></item>
-            <item><widget class="QFrame" name="k5"><property name="class"><string>card</string></property><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatPhotos"><property name="text"><string>0</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#9B7AB8;</string></property></widget></item><item><widget class="QLabel" name="sl5"><property name="text"><string>Photos</string></property></widget></item></layout></widget></item>
+            <item><widget class="QFrame" name="k1"><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatEntries"><property name="text"><string>0</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#587F73;</string></property></widget></item><item><widget class="QLabel" name="sl1"><property name="text"><string>Total entries</string></property></widget></item></layout></widget></item>
+            <item><widget class="QFrame" name="k2"><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatWords"><property name="text"><string>0</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#6E86B7;</string></property></widget></item><item><widget class="QLabel" name="sl2"><property name="text"><string>Words written</string></property></widget></item></layout></widget></item>
+            <item><widget class="QFrame" name="k3"><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatStreak"><property name="text"><string>0</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#B68B55;</string></property></widget></item><item><widget class="QLabel" name="sl3"><property name="text"><string>Current streak</string></property></widget></item></layout></widget></item>
+            <item><widget class="QFrame" name="k4"><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatRating"><property name="text"><string>—</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#B97878;</string></property></widget></item><item><widget class="QLabel" name="sl4"><property name="text"><string>Average rating</string></property></widget></item></layout></widget></item>
+            <item><widget class="QFrame" name="k5"><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatPhotos"><property name="text"><string>0</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#9B7AB8;</string></property></widget></item><item><widget class="QLabel" name="sl5"><property name="text"><string>Photos</string></property></widget></item></layout></widget></item>
            </layout></item>
            <item><layout class="QHBoxLayout">
             <item><widget class="QTableWidget" name="tableMonthlyStats"/></item>
@@ -238,7 +236,7 @@ QScrollArea { border:0; background:transparent; }
          <!-- SETTINGS -->
          <widget class="QWidget" name="pageSettings">
           <layout class="QVBoxLayout">
-           <item><widget class="QFrame" name="settingsCard"><property name="class"><string>card</string></property><layout class="QVBoxLayout">
+           <item><widget class="QFrame" name="settingsCard"><layout class="QVBoxLayout">
             <item><widget class="QLabel" name="lblSettingsTitle"><property name="text"><string>Settings &amp; data</string></property><property name="styleSheet"><string>font-size:23px;font-weight:850;</string></property></widget></item>
             <item><widget class="QLabel" name="lblDatabasePath"><property name="text"><string>Database: —</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
             <item><widget class="QLabel" name="lblPrivacy"><property name="text"><string>Your journal stays local. Rich text and image bytes are stored in SQLite.</string></property></widget></item>
