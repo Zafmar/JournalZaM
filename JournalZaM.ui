@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainMenu</class>
+ <widget class="QMainWindow" name="MainMenu">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>1480</width><height>900</height></rect></property>
+  <property name="minimumSize"><size><width>1180</width><height>720</height></size></property>
+  <property name="windowTitle"><string>JournalZaM</string></property>
+  <property name="styleSheet">
+   <string notr="true">
+QMainWindow, QWidget#centralwidget { background:#F4F7F8; color:#25343A; font-family:"Segoe UI",Arial,sans-serif; }
+QFrame#sidebar { background:#24343A; border:0; }
+QLabel#lblBrand { color:white; font-size:28px; font-weight:900; }
+QLabel#lblBrandSub { color:#AFC2C7; font-size:11px; font-weight:600; }
+QLabel.sidebarSection { color:#7F989F; font-size:10px; font-weight:800; }
+QPushButton[class="navButton"] { background:transparent; color:#CFDADD; border:0; border-radius:12px; text-align:left; padding:12px 16px; min-height:24px; font-size:13px; font-weight:650; }
+QPushButton[class="navButton"]:hover { background:#30464D; color:white; }
+QPushButton[class="navButton"][active="true"] { background:#DDEBE8; color:#204039; font-weight:850; }
+QLabel#lblHeaderTitle { color:#23333A; font-size:27px; font-weight:850; }
+QLabel#lblHeaderSubtitle, QLabel#lblToday { color:#667981; font-size:12px; }
+QFrame[class="card"] { background:white; border:1px solid #D8E2E5; border-radius:16px; }
+QLabel[class="sectionTitle"] { color:#2D4148; font-size:15px; font-weight:800; }
+QLabel[class="hint"] { color:#7B8D94; font-size:10px; }
+QLineEdit, QTextEdit, QComboBox, QDateEdit, QSpinBox, QFontComboBox {
+ background:#FBFCFC; color:#263A42; border:1px solid #C9D7DB; border-radius:9px;
+ min-height:34px; padding:0 9px; font-size:12px; selection-background-color:#CFE1DC;
+}
+QTextEdit { padding:8px; }
+QLineEdit:focus, QTextEdit:focus, QComboBox:focus, QDateEdit:focus, QSpinBox:focus, QFontComboBox:focus { border:2px solid #6F9488; background:white; }
+QPushButton[class="primary"] { background:#587F73; color:white; border:0; border-radius:10px; padding:9px 16px; font-weight:850; }
+QPushButton[class="primary"]:hover { background:#4C7166; }
+QPushButton[class="secondary"] { background:#EDF2F3; color:#40555D; border:1px solid #D1DDE0; border-radius:10px; padding:9px 14px; font-weight:750; }
+QPushButton[class="danger"] { background:#FFF0F0; color:#A54F4F; border:1px solid #E8CACA; border-radius:10px; padding:9px 14px; font-weight:800; }
+QPushButton[class="tool"] { background:#F7FAFA; color:#40555D; border:1px solid #D5E0E3; border-radius:7px; min-width:32px; min-height:30px; font-weight:750; }
+QPushButton[class="tool"]:checked { background:#DDEBE8; color:#204039; border:1px solid #AFCBC4; }
+QTableWidget, QListWidget { background:white; alternate-background-color:#F7F9FA; border:1px solid #D8E2E5; border-radius:12px; gridline-color:#E7ECEE; selection-background-color:#DDEBE8; selection-color:#23343A; }
+QHeaderView::section { background:#E7EFED; color:#344950; border:0; border-right:1px solid #D6E1DF; padding:8px; font-weight:750; }
+QCalendarWidget QWidget { alternate-background-color:#F5F8F8; }
+QCalendarWidget QAbstractItemView:enabled { color:#31464D; selection-background-color:#6F9488; selection-color:white; }
+QScrollArea { border:0; background:transparent; }
+   </string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="rootLayout">
+    <property name="spacing"><number>0</number></property>
+    <property name="leftMargin"><number>0</number></property><property name="topMargin"><number>0</number></property><property name="rightMargin"><number>0</number></property><property name="bottomMargin"><number>0</number></property>
+    <item>
+     <widget class="QFrame" name="sidebar">
+      <property name="minimumSize"><size><width>245</width><height>0</height></size></property>
+      <property name="maximumSize"><size><width>245</width><height>16777215</height></size></property>
+      <layout class="QVBoxLayout" name="sidebarLayout">
+       <property name="leftMargin"><number>18</number></property><property name="topMargin"><number>28</number></property><property name="rightMargin"><number>18</number></property><property name="bottomMargin"><number>22</number></property>
+       <item><widget class="QLabel" name="lblBrand"><property name="text"><string>JournalZaM</string></property></widget></item>
+       <item><widget class="QLabel" name="lblBrandSub"><property name="text"><string>Your private digital memory book</string></property></widget></item>
+       <item><spacer name="s1"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>18</height></size></property></spacer></item>
+       <item><widget class="QLabel" name="lblSection1"><property name="text"><string>JOURNAL</string></property><property name="class"><string>sidebarSection</string></property></widget></item>
+       <item><widget class="QPushButton" name="btnWrite"><property name="text"><string>✎   Write</string></property></widget></item>
+       <item><widget class="QPushButton" name="btnCalendar"><property name="text"><string>▦   Calendar</string></property></widget></item>
+       <item><widget class="QPushButton" name="btnJournal"><property name="text"><string>☷   Journal</string></property></widget></item>
+       <item><widget class="QPushButton" name="btnGallery"><property name="text"><string>▣   Gallery</string></property></widget></item>
+       <item><widget class="QPushButton" name="btnSearch"><property name="text"><string>⌕   Search</string></property></widget></item>
+       <item><widget class="QPushButton" name="btnMemories"><property name="text"><string>✦   Memories</string></property></widget></item>
+       <item><widget class="QPushButton" name="btnStats"><property name="text"><string>▥   Statistics</string></property></widget></item>
+       <item><spacer name="s2"><property name="orientation"><enum>Qt::Vertical</enum></property></spacer></item>
+       <item><widget class="QPushButton" name="btnSettings"><property name="text"><string>⚙   Settings</string></property></widget></item>
+       <item><widget class="QLabel" name="lblPrivate"><property name="text"><string>Local • Private • SQLite</string></property><property name="styleSheet"><string>color:#82989E;font-size:10px;</string></property></widget></item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QWidget" name="contentWidget">
+      <layout class="QVBoxLayout" name="contentLayout">
+       <property name="leftMargin"><number>28</number></property><property name="topMargin"><number>18</number></property><property name="rightMargin"><number>28</number></property><property name="bottomMargin"><number>22</number></property>
+       <item>
+        <layout class="QHBoxLayout" name="headerLayout">
+         <item><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblHeaderTitle"><property name="text"><string>Write</string></property></widget></item><item><widget class="QLabel" name="lblHeaderSubtitle"><property name="text"><string>Put the day into words.</string></property></widget></item></layout></item>
+         <item><spacer name="headerSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
+         <item><widget class="QLabel" name="lblToday"><property name="text"><string>Today</string></property></widget></item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QStackedWidget" name="stackedWidget">
+         <property name="currentIndex"><number>0</number></property>
+
+         <!-- WRITE -->
+         <widget class="QWidget" name="pageWrite">
+          <layout class="QVBoxLayout">
+           <property name="spacing"><number>12</number></property>
+           <item>
+            <widget class="QFrame" name="metaCard">
+             <property name="class"><string>card</string></property>
+             <layout class="QGridLayout">
+              <property name="leftMargin"><number>18</number></property><property name="topMargin"><number>15</number></property><property name="rightMargin"><number>18</number></property><property name="bottomMargin"><number>15</number></property>
+              <item row="0" column="0"><widget class="QLabel" name="lDate"><property name="text"><string>Date</string></property></widget></item>
+              <item row="0" column="1"><widget class="QLabel" name="lTitle"><property name="text"><string>Title</string></property></widget></item>
+              <item row="0" column="2"><widget class="QLabel" name="lMood"><property name="text"><string>Mood</string></property></widget></item>
+              <item row="0" column="3"><widget class="QLabel" name="lRating"><property name="text"><string>Day rating</string></property></widget></item>
+              <item row="1" column="0"><widget class="QDateEdit" name="dateEntry"><property name="calendarPopup"><bool>true</bool></property><property name="displayFormat"><string>yyyy-MM-dd</string></property></widget></item>
+              <item row="1" column="1"><widget class="QLineEdit" name="editTitle"><property name="placeholderText"><string>Give this memory a title...</string></property></widget></item>
+              <item row="1" column="2"><widget class="QComboBox" name="comboMood"><item><property name="text"><string>😄 Great</string></property></item><item><property name="text"><string>🙂 Good</string></property></item><item><property name="text"><string>😐 Neutral</string></property></item><item><property name="text"><string>😔 Low</string></property></item><item><property name="text"><string>😡 Angry</string></property></item><item><property name="text"><string>😴 Tired</string></property></item><item><property name="text"><string>🤩 Excited</string></property></item></widget></item>
+              <item row="1" column="3"><widget class="QSpinBox" name="spinRating"><property name="minimum"><number>1</number></property><property name="maximum"><number>10</number></property><property name="value"><number>7</number></property><property name="suffix"><string> / 10</string></property></widget></item>
+              <item row="2" column="0"><widget class="QLabel" name="lCategory"><property name="text"><string>Category</string></property></widget></item>
+              <item row="2" column="1"><widget class="QLabel" name="lTags"><property name="text"><string>Tags</string></property></widget></item>
+              <item row="2" column="2"><widget class="QLabel" name="lPeople"><property name="text"><string>People</string></property></widget></item>
+              <item row="2" column="3"><widget class="QCheckBox" name="checkFavorite"><property name="text"><string>★ Favorite memory</string></property></widget></item>
+              <item row="3" column="0"><widget class="QComboBox" name="comboCategory"/></item>
+              <item row="3" column="1"><widget class="QLineEdit" name="editTags"><property name="placeholderText"><string>travel, books, idea</string></property></widget></item>
+              <item row="3" column="2"><widget class="QLineEdit" name="editPeople"><property name="placeholderText"><string>Names, separated by commas</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <item>
+            <widget class="QFrame" name="editorCard">
+             <property name="class"><string>card</string></property>
+             <layout class="QVBoxLayout">
+              <property name="leftMargin"><number>16</number></property><property name="topMargin"><number>14</number></property><property name="rightMargin"><number>16</number></property><property name="bottomMargin"><number>16</number></property>
+              <item>
+               <layout class="QHBoxLayout" name="formatToolbar">
+                <item><widget class="QFontComboBox" name="fontFamily"><property name="maximumSize"><size><width>170</width><height>16777215</height></size></property></widget></item>
+                <item><widget class="QComboBox" name="comboFontSize"><item><property name="text"><string>10</string></property></item><item><property name="text"><string>11</string></property></item><item><property name="text"><string>12</string></property></item><item><property name="text"><string>14</string></property></item><item><property name="text"><string>16</string></property></item><item><property name="text"><string>18</string></property></item><item><property name="text"><string>22</string></property></item><item><property name="text"><string>28</string></property></item><item><property name="text"><string>36</string></property></item></widget></item>
+                <item><widget class="QPushButton" name="btnBold"><property name="text"><string>B</string></property><property name="checkable"><bool>true</bool></property></widget></item>
+                <item><widget class="QPushButton" name="btnItalic"><property name="text"><string>I</string></property><property name="checkable"><bool>true</bool></property></widget></item>
+                <item><widget class="QPushButton" name="btnUnderline"><property name="text"><string>U</string></property><property name="checkable"><bool>true</bool></property></widget></item>
+                <item><widget class="QPushButton" name="btnStrike"><property name="text"><string>S</string></property><property name="checkable"><bool>true</bool></property></widget></item>
+                <item><widget class="QPushButton" name="btnTextColor"><property name="text"><string>A●</string></property></widget></item>
+                <item><widget class="QPushButton" name="btnHighlight"><property name="text"><string>▰</string></property></widget></item>
+                <item><widget class="QPushButton" name="btnAlignLeft"><property name="text"><string>≡</string></property></widget></item>
+                <item><widget class="QPushButton" name="btnAlignCenter"><property name="text"><string>≣</string></property></widget></item>
+                <item><widget class="QPushButton" name="btnAlignRight"><property name="text"><string>≡›</string></property></widget></item>
+                <item><widget class="QPushButton" name="btnBullet"><property name="text"><string>• List</string></property></widget></item>
+                <item><widget class="QPushButton" name="btnNumbered"><property name="text"><string>1. List</string></property></widget></item>
+                <item><widget class="QPushButton" name="btnLink"><property name="text"><string>Link</string></property></widget></item>
+                <item><widget class="QPushButton" name="btnImage"><property name="text"><string>＋ Image</string></property></widget></item>
+                <item><widget class="QPushButton" name="btnUndo"><property name="text"><string>↶</string></property></widget></item>
+                <item><widget class="QPushButton" name="btnRedo"><property name="text"><string>↷</string></property></widget></item>
+               </layout>
+              </item>
+              <item><widget class="QTextEdit" name="txtEditor"><property name="minimumSize"><size><width>0</width><height>390</height></size></property><property name="placeholderText"><string>Write freely. Drop the day here in your own words...</string></property><property name="acceptRichText"><bool>true</bool></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <item>
+            <layout class="QHBoxLayout">
+             <item><widget class="QLabel" name="lblWordCount"><property name="text"><string>0 words • 0 characters</string></property><property name="styleSheet"><string>color:#7B8D94;</string></property></widget></item>
+             <item><spacer name="actSpace"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
+             <item><widget class="QPushButton" name="btnClearEntry"><property name="text"><string>Clear</string></property></widget></item>
+             <item><widget class="QPushButton" name="btnDeleteEntry"><property name="text"><string>Delete</string></property></widget></item>
+             <item><widget class="QPushButton" name="btnSaveEntry"><property name="text"><string>Save journal entry</string></property></widget></item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+
+         <!-- CALENDAR -->
+         <widget class="QWidget" name="pageCalendar">
+          <layout class="QHBoxLayout">
+           <property name="spacing"><number>16</number></property>
+           <item><widget class="QFrame" name="calendarCard"><property name="class"><string>card</string></property><layout class="QVBoxLayout"><item><widget class="QCalendarWidget" name="calendarJournal"><property name="gridVisible"><bool>true</bool></property></widget></item></layout></widget></item>
+           <item><widget class="QFrame" name="calendarPreviewCard"><property name="minimumSize"><size><width>390</width><height>0</height></size></property><property name="maximumSize"><size><width>470</width><height>16777215</height></size></property><property name="class"><string>card</string></property><layout class="QVBoxLayout">
+            <item><widget class="QLabel" name="lblCalendarDate"><property name="text"><string>Select a day</string></property><property name="styleSheet"><string>font-size:20px;font-weight:850;</string></property></widget></item>
+            <item><widget class="QListWidget" name="listCalendarEntries"/></item>
+            <item><widget class="QTextEdit" name="txtCalendarPreview"><property name="readOnly"><bool>true</bool></property></widget></item>
+            <item><widget class="QPushButton" name="btnOpenCalendarEntry"><property name="text"><string>Open selected entry</string></property></widget></item>
+           </layout></widget></item>
+          </layout>
+         </widget>
+
+         <!-- JOURNAL -->
+         <widget class="QWidget" name="pageJournal">
+          <layout class="QHBoxLayout">
+           <property name="spacing"><number>16</number></property>
+           <item><widget class="QFrame" name="journalListCard"><property name="minimumSize"><size><width>390</width><height>0</height></size></property><property name="maximumSize"><size><width>470</width><height>16777215</height></size></property><property name="class"><string>card</string></property><layout class="QVBoxLayout">
+            <item><widget class="QLineEdit" name="editJournalFilter"><property name="placeholderText"><string>Filter titles or text...</string></property></widget></item>
+            <item><widget class="QListWidget" name="listEntries"/></item>
+           </layout></widget></item>
+           <item><widget class="QFrame" name="readingCard"><property name="class"><string>card</string></property><layout class="QVBoxLayout">
+            <item><widget class="QLabel" name="lblReadTitle"><property name="text"><string>Select an entry</string></property><property name="styleSheet"><string>font-size:24px;font-weight:900;</string></property></widget></item>
+            <item><widget class="QLabel" name="lblReadMeta"><property name="text"><string>—</string></property><property name="styleSheet"><string>color:#6F7F85;</string></property></widget></item>
+            <item><widget class="QTextEdit" name="txtReading"><property name="readOnly"><bool>true</bool></property></widget></item>
+            <item><layout class="QHBoxLayout"><item><widget class="QPushButton" name="btnEditSelected"><property name="text"><string>Edit this entry</string></property></widget></item><item><spacer name="jrsp"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item></layout></item>
+           </layout></widget></item>
+          </layout>
+         </widget>
+
+         <!-- GALLERY -->
+         <widget class="QWidget" name="pageGallery">
+          <layout class="QVBoxLayout">
+           <item><widget class="QFrame" name="galleryHead"><property name="class"><string>card</string></property><layout class="QHBoxLayout"><item><widget class="QLabel" name="lblGalleryInfo"><property name="text"><string>Every picture in your journal, in chronological order.</string></property></widget></item><item><spacer name="gsp"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item><item><widget class="QPushButton" name="btnRefreshGallery"><property name="text"><string>Refresh</string></property></widget></item></layout></widget></item>
+           <item><widget class="QListWidget" name="listGallery"><property name="viewMode"><enum>QListView::IconMode</enum></property><property name="iconSize"><size><width>180</width><height>130</height></size></property><property name="resizeMode"><enum>QListView::Adjust</enum></property><property name="spacing"><number>12</number></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+          </layout>
+         </widget>
+
+         <!-- SEARCH -->
+         <widget class="QWidget" name="pageSearch">
+          <layout class="QVBoxLayout">
+           <item><widget class="QFrame" name="searchControls"><property name="class"><string>card</string></property><layout class="QHBoxLayout">
+            <item><widget class="QLineEdit" name="editSearch"><property name="placeholderText"><string>Search your entire journal...</string></property></widget></item>
+            <item><widget class="QComboBox" name="comboSearchMood"><item><property name="text"><string>Any mood</string></property></item></widget></item>
+            <item><widget class="QComboBox" name="comboSearchCategory"><item><property name="text"><string>Any category</string></property></item></widget></item>
+            <item><widget class="QCheckBox" name="checkSearchImages"><property name="text"><string>Has images</string></property></widget></item>
+            <item><widget class="QCheckBox" name="checkSearchFavorite"><property name="text"><string>Favorites</string></property></widget></item>
+            <item><widget class="QPushButton" name="btnRunSearch"><property name="text"><string>Search</string></property></widget></item>
+           </layout></widget></item>
+           <item><widget class="QTableWidget" name="tableSearch"/></item>
+          </layout>
+         </widget>
+
+         <!-- MEMORIES -->
+         <widget class="QWidget" name="pageMemories">
+          <layout class="QVBoxLayout">
+           <item><layout class="QHBoxLayout"><item><widget class="QPushButton" name="btnRandomMemory"><property name="text"><string>✦ Take me somewhere</string></property></widget></item><item><spacer name="msp"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item></layout></item>
+           <item><widget class="QFrame" name="memoryCard"><property name="class"><string>card</string></property><layout class="QVBoxLayout">
+            <item><widget class="QLabel" name="lblMemoryHeading"><property name="text"><string>On this day</string></property><property name="styleSheet"><string>font-size:24px;font-weight:900;</string></property></widget></item>
+            <item><widget class="QListWidget" name="listMemories"/></item>
+            <item><widget class="QTextEdit" name="txtMemoryPreview"><property name="readOnly"><bool>true</bool></property></widget></item>
+           </layout></widget></item>
+          </layout>
+         </widget>
+
+         <!-- STATS -->
+         <widget class="QWidget" name="pageStats">
+          <layout class="QVBoxLayout">
+           <item><layout class="QHBoxLayout">
+            <item><widget class="QFrame" name="k1"><property name="class"><string>card</string></property><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatEntries"><property name="text"><string>0</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#587F73;</string></property></widget></item><item><widget class="QLabel" name="sl1"><property name="text"><string>Total entries</string></property></widget></item></layout></widget></item>
+            <item><widget class="QFrame" name="k2"><property name="class"><string>card</string></property><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatWords"><property name="text"><string>0</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#6E86B7;</string></property></widget></item><item><widget class="QLabel" name="sl2"><property name="text"><string>Words written</string></property></widget></item></layout></widget></item>
+            <item><widget class="QFrame" name="k3"><property name="class"><string>card</string></property><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatStreak"><property name="text"><string>0</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#B68B55;</string></property></widget></item><item><widget class="QLabel" name="sl3"><property name="text"><string>Current streak</string></property></widget></item></layout></widget></item>
+            <item><widget class="QFrame" name="k4"><property name="class"><string>card</string></property><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatRating"><property name="text"><string>—</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#B97878;</string></property></widget></item><item><widget class="QLabel" name="sl4"><property name="text"><string>Average rating</string></property></widget></item></layout></widget></item>
+            <item><widget class="QFrame" name="k5"><property name="class"><string>card</string></property><layout class="QVBoxLayout"><item><widget class="QLabel" name="lblStatPhotos"><property name="text"><string>0</string></property><property name="styleSheet"><string>font-size:30px;font-weight:900;color:#9B7AB8;</string></property></widget></item><item><widget class="QLabel" name="sl5"><property name="text"><string>Photos</string></property></widget></item></layout></widget></item>
+           </layout></item>
+           <item><layout class="QHBoxLayout">
+            <item><widget class="QTableWidget" name="tableMonthlyStats"/></item>
+            <item><widget class="QTableWidget" name="tableMoodStats"/></item>
+           </layout></item>
+          </layout>
+         </widget>
+
+         <!-- SETTINGS -->
+         <widget class="QWidget" name="pageSettings">
+          <layout class="QVBoxLayout">
+           <item><widget class="QFrame" name="settingsCard"><property name="class"><string>card</string></property><layout class="QVBoxLayout">
+            <item><widget class="QLabel" name="lblSettingsTitle"><property name="text"><string>Settings &amp; data</string></property><property name="styleSheet"><string>font-size:23px;font-weight:850;</string></property></widget></item>
+            <item><widget class="QLabel" name="lblDatabasePath"><property name="text"><string>Database: —</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
+            <item><widget class="QLabel" name="lblPrivacy"><property name="text"><string>Your journal stays local. Rich text and image bytes are stored in SQLite.</string></property></widget></item>
+            <item><layout class="QHBoxLayout"><item><widget class="QPushButton" name="btnExportHtml"><property name="text"><string>Export selected entry as HTML</string></property></widget></item><item><widget class="QPushButton" name="btnBackupDb"><property name="text"><string>Backup database</string></property></widget></item><item><spacer name="ssp"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item></layout></item>
+            <item><spacer name="settingsSpace"><property name="orientation"><enum>Qt::Vertical</enum></property></spacer></item>
+           </layout></widget></item>
+          </layout>
+         </widget>
+
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
