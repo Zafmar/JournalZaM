@@ -23,8 +23,7 @@ from PyQt5.QtWidgets import (
 
 BASE_DIR = Path(__file__).resolve().parent
 UI_FILE = BASE_DIR / "JournalZaM.ui"
-SCHEMA_FILE = BASE_DIR / "JournalZaM_schema.sql"
-DB_FILE = BASE_DIR / "JournalZaM_DB.db"
+DB_FILE = BASE_DIR / "JournalZaM.db"
 
 
 class JournalWindow(QMainWindow):
@@ -35,7 +34,6 @@ class JournalWindow(QMainWindow):
         self.conn = sqlite3.connect(str(DB_FILE))
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
-        self.initialize_database()
 
         self.current_entry_id = None
         self.pending_images = {}       # image_key -> {data, file_name, mime_type}
@@ -72,12 +70,6 @@ class JournalWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Database
     # ------------------------------------------------------------------
-    def initialize_database(self):
-        if not SCHEMA_FILE.exists():
-            raise FileNotFoundError(f"Missing schema file: {SCHEMA_FILE}")
-        self.conn.executescript(SCHEMA_FILE.read_text(encoding="utf-8"))
-        self.conn.commit()
-
     # ------------------------------------------------------------------
     # Setup
     # ------------------------------------------------------------------
@@ -144,6 +136,8 @@ class JournalWindow(QMainWindow):
             self.btnNumbered,
             self.btnLink,
             self.btnImage,
+            self.btnLTR,
+            self.btnRTL,
             self.btnUndo,
             self.btnRedo,
         ):
@@ -193,6 +187,8 @@ class JournalWindow(QMainWindow):
                 self.btnNumbered,
                 self.btnLink,
                 self.btnImage,
+                self.btnLTR,
+                self.btnRTL,
                 self.btnUndo,
                 self.btnRedo,
             ]
@@ -251,6 +247,8 @@ class JournalWindow(QMainWindow):
         self.btnNumbered.clicked.connect(lambda: self.insert_list(QTextListFormat.ListDecimal))
         self.btnLink.clicked.connect(self.insert_link)
         self.btnImage.clicked.connect(self.insert_image)
+        self.btnLTR.clicked.connect(self.set_ltr)
+        self.btnRTL.clicked.connect(self.set_rtl)
         self.btnUndo.clicked.connect(self.txtEditor.undo)
         self.btnRedo.clicked.connect(self.txtEditor.redo)
         self.fontFamily.currentFontChanged.connect(self.apply_font_family)
@@ -382,6 +380,26 @@ class JournalWindow(QMainWindow):
         list_fmt.setStyle(style)
         cursor.createList(list_fmt)
         cursor.endEditBlock()
+
+    def set_ltr(self):
+        """Set the current paragraph/block to left-to-right."""
+        cursor = self.txtEditor.textCursor()
+        block_format = cursor.blockFormat()
+        block_format.setLayoutDirection(Qt.LeftToRight)
+        block_format.setAlignment(Qt.AlignLeft)
+        cursor.mergeBlockFormat(block_format)
+        self.txtEditor.setTextCursor(cursor)
+        self.txtEditor.setLayoutDirection(Qt.LeftToRight)
+
+    def set_rtl(self):
+        """Set the current paragraph/block to right-to-left for Farsi."""
+        cursor = self.txtEditor.textCursor()
+        block_format = cursor.blockFormat()
+        block_format.setLayoutDirection(Qt.RightToLeft)
+        block_format.setAlignment(Qt.AlignRight)
+        cursor.mergeBlockFormat(block_format)
+        self.txtEditor.setTextCursor(cursor)
+        self.txtEditor.setLayoutDirection(Qt.RightToLeft)
 
     def insert_link(self):
         text, ok = QInputDialog.getText(self, "Link text", "Visible text:")
@@ -552,6 +570,7 @@ class JournalWindow(QMainWindow):
         self.dateEntry.setDate(QDate.currentDate())
         self.editTitle.clear()
         self.txtEditor.clear()
+        self.txtEditor.setLayoutDirection(Qt.LeftToRight)
         self.editTags.clear()
         self.editPeople.clear()
         self.spinRating.setValue(7)
