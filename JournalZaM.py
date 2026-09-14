@@ -13,6 +13,7 @@ import secrets
 import hmac
 from pathlib import Path
 from datetime import datetime, date, timedelta
+import calendar
 
 from PyQt5 import uic
 from PyQt5.QtCore import Qt, QDate, QUrl, QSize
@@ -185,6 +186,10 @@ class JournalWindow(QMainWindow):
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
 
+        # Create any supporting tables that may be missing in older databases.
+        # Existing data is preserved because every statement uses IF NOT EXISTS.
+        self.ensure_support_tables()
+
         self.current_entry_id = None
         self.pending_images = {}       # image_key -> {data, file_name, mime_type}
         self.entry_dates = set()
@@ -210,6 +215,10 @@ class JournalWindow(QMainWindow):
         self.connect_signals()
 
         self.dateEntry.setDate(QDate.currentDate())
+        self.spinMemoryYear.setValue(QDate.currentDate().year())
+        self.comboMemoryMonth.setCurrentIndex(QDate.currentDate().month() - 1)
+        self.load_birth_year()
+        self.update_date_precision_ui()
         self.lblToday.setText(datetime.now().strftime("%A, %d %B %Y"))
         self.lblDatabasePath.setText(f"Database: {DB_FILE}")
 
@@ -220,6 +229,194 @@ class JournalWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Database
     # ------------------------------------------------------------------
+    def ensure_support_tables(self):
+        """
+        Ensure the complete JournalZaM schema exists.
+
+        This is safe for existing databases:
+        - CREATE TABLE IF NOT EXISTS preserves existing tables/data.
+        - Missing journal_entries columns are added individually.
+        """
+
+        # Main journal table must exist before the app can query anything.
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS journal_entries (
+                id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                entry_date        DATE,
+                title             TEXT NOT NULL DEFAULT '',
+                body_html         TEXT NOT NULL DEFAULT '',
+                body_plain        TEXT NOT NULL DEFAULT '',
+                mood              TEXT,
+                day_rating        INTEGER,
+                category_id       INTEGER,
+                favorite          INTEGER DEFAULT 0,
+                created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+                date_precision    TEXT NOT NULL DEFAULT 'exact',
+                memory_start_date DATE,
+                memory_end_date   DATE,
+                memory_year       INTEGER,
+                memory_month      INTEGER,
+                age_min           INTEGER,
+                age_max           INTEGER,
+                date_certainty    TEXT DEFAULT 'Certain',
+                date_note         TEXT
+            )
+        """)
+
+        # Existing journal_entries tables may predate the flexible-memory-date
+        # feature, so add only the columns that are missing.
+        existing_columns = {
+            row["name"]
+            for row in self.conn.execute("PRAGMA table_info(journal_entries)")
+        }
+
+        missing_columns = {
+            "entry_date": "DATE",
+            "title": "TEXT NOT NULL DEFAULT ''",
+            "body_html": "TEXT NOT NULL DEFAULT ''",
+            "body_plain": "TEXT NOT NULL DEFAULT ''",
+            "mood": "TEXT",
+            "day_rating": "INTEGER",
+            "category_id": "INTEGER",
+            "favorite": "INTEGER DEFAULT 0",
+            "created_at": "DATETIME DEFAULT CURRENT_TIMESTAMP",
+            "updated_at": "DATETIME DEFAULT CURRENT_TIMESTAMP",
+            "date_precision": "TEXT NOT NULL DEFAULT 'exact'",
+            "memory_start_date": "DATE",
+            "memory_end_date": "DATE",
+            "memory_year": "INTEGER",
+            "memory_month": "INTEGER",
+            "age_min": "INTEGER",
+            "age_max": "INTEGER",
+            "date_certainty": "TEXT DEFAULT 'Certain'",
+            "date_note": "TEXT",
+        }
+
+        for column_name, column_type in missing_columns.items():
+            if column_name not in existing_columns:
+                self.conn.execute(
+                    f"ALTER TABLE journal_entries "
+                    f"ADD COLUMN {column_name} {column_type}"
+                )
+
+        # Auxiliary tables.
+        self.conn.executescript("""
+            CREATE TABLE IF NOT EXISTS categories (
+                id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                name      TEXT NOT NULL UNIQUE,
+                color     TEXT,
+                active    INTEGER DEFAULT 1
+            );
+
+            CREATE TABLE IF NOT EXISTS tags (
+                id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                name      TEXT NOT NULL UNIQUE COLLATE NOCASE
+            );
+
+            CREATE TABLE IF NOT EXISTS entry_tags (
+                entry_id  INTEGER NOT NULL,
+                tag_id    INTEGER NOT NULL,
+                PRIMARY KEY (entry_id, tag_id),
+                FOREIGN KEY (entry_id)
+                    REFERENCES journal_entries(id) ON DELETE CASCADE,
+                FOREIGN KEY (tag_id)
+                    REFERENCES tags(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS people (
+                id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                name      TEXT NOT NULL UNIQUE COLLATE NOCASE
+            );
+
+            CREATE TABLE IF NOT EXISTS entry_people (
+                entry_id  INTEGER NOT NULL,
+                person_id INTEGER NOT NULL,
+                PRIMARY KEY (entry_id, person_id),
+                FOREIGN KEY (entry_id)
+                    REFERENCES journal_entries(id) ON DELETE CASCADE,
+                FOREIGN KEY (person_id)
+                    REFERENCES people(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS entry_images (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                entry_id   INTEGER NOT NULL,
+                image_key  TEXT NOT NULL UNIQUE,
+                file_name  TEXT,
+                mime_type  TEXT,
+                image_data BLOB NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (entry_id)
+                    REFERENCES journal_entries(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS app_settings (
+                setting_key   TEXT PRIMARY KEY,
+                setting_value TEXT
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_entries_date
+                ON journal_entries(entry_date);
+
+            CREATE INDEX IF NOT EXISTS idx_entries_memory_start
+                ON journal_entries(memory_start_date);
+
+            CREATE INDEX IF NOT EXISTS idx_entries_precision
+                ON journal_entries(date_precision);
+
+            CREATE INDEX IF NOT EXISTS idx_entry_tags_entry
+                ON entry_tags(entry_id);
+
+            CREATE INDEX IF NOT EXISTS idx_entry_people_entry
+                ON entry_people(entry_id);
+
+            CREATE INDEX IF NOT EXISTS idx_entry_images_entry
+                ON entry_images(entry_id);
+        """)
+
+        # Seed default categories without replacing user-created ones.
+        default_categories = [
+            ("Personal", "#6F9488"),
+            ("Work", "#6E86B7"),
+            ("Travel", "#B68B55"),
+            ("Ideas", "#9B7AB8"),
+            ("Books & Culture", "#B97878"),
+            ("Health & Wellbeing", "#6D9A72"),
+        ]
+
+        self.conn.executemany("""
+            INSERT OR IGNORE INTO categories(name, color, active)
+            VALUES (?, ?, 1)
+        """, default_categories)
+
+        # Migrate old exact-date rows into the new flexible date fields.
+        self.conn.execute("""
+            UPDATE journal_entries
+            SET
+                date_precision = COALESCE(date_precision, 'exact'),
+                memory_start_date = COALESCE(memory_start_date, entry_date),
+                memory_end_date = COALESCE(memory_end_date, entry_date),
+                memory_year = COALESCE(
+                    memory_year,
+                    CASE
+                        WHEN entry_date IS NOT NULL
+                        THEN CAST(substr(entry_date, 1, 4) AS INTEGER)
+                    END
+                ),
+                memory_month = COALESCE(
+                    memory_month,
+                    CASE
+                        WHEN entry_date IS NOT NULL
+                        THEN CAST(substr(entry_date, 6, 2) AS INTEGER)
+                    END
+                )
+            WHERE entry_date IS NOT NULL
+              AND (date_precision IS NULL OR date_precision = 'exact')
+        """)
+
+        self.conn.commit()
+
     # ------------------------------------------------------------------
     # Setup
     # ------------------------------------------------------------------
@@ -267,6 +464,7 @@ class JournalWindow(QMainWindow):
             self.btnRefreshGallery,
             self.btnExportHtml,
             self.btnBackupDb,
+            self.btnSaveBirthYear,
         ):
             b.setProperty("class", "secondary")
 
@@ -323,6 +521,7 @@ class JournalWindow(QMainWindow):
                 self.btnRefreshGallery,
                 self.btnExportHtml,
                 self.btnBackupDb,
+                self.btnSaveBirthYear,
                 self.btnDeleteEntry,
                 self.btnBold,
                 self.btnItalic,
@@ -405,6 +604,7 @@ class JournalWindow(QMainWindow):
         self.comboFontSize.currentTextChanged.connect(self.apply_font_size)
         self.txtEditor.textChanged.connect(self.update_word_count)
         self.txtEditor.currentCharFormatChanged.connect(self.sync_format_buttons)
+        self.comboDatePrecision.currentTextChanged.connect(self.update_date_precision_ui)
 
         # Entries
         self.btnSaveEntry.clicked.connect(self.save_entry)
@@ -436,6 +636,7 @@ class JournalWindow(QMainWindow):
         # Settings
         self.btnExportHtml.clicked.connect(self.export_selected_html)
         self.btnBackupDb.clicked.connect(self.backup_database)
+        self.btnSaveBirthYear.clicked.connect(self.save_birth_year)
 
     # ------------------------------------------------------------------
     # Navigation
@@ -621,6 +822,141 @@ class JournalWindow(QMainWindow):
         self.lblWordCount.setText(f"{words:,} words • {len(text):,} characters")
 
     # ------------------------------------------------------------------
+    # Flexible / uncertain memory dates
+    # ------------------------------------------------------------------
+    def update_date_precision_ui(self):
+        mode = self.comboDatePrecision.currentText()
+
+        exact = mode == "Exact date"
+        month_known = mode == "Month known"
+        year_known = mode == "Year known"
+        age_range = mode == "Age range"
+
+        self.lblExactDate.setVisible(exact)
+        self.dateEntry.setVisible(exact)
+
+        self.lblMonth.setVisible(month_known)
+        self.comboMemoryMonth.setVisible(month_known)
+
+        self.lblYear.setVisible(month_known or year_known)
+        self.spinMemoryYear.setVisible(month_known or year_known)
+
+        self.lblAgeFrom.setVisible(age_range)
+        self.spinAgeMin.setVisible(age_range)
+        self.lblAgeTo.setVisible(age_range)
+        self.spinAgeMax.setVisible(age_range)
+
+        # Certainty/note stay visible for every mode, including Unknown.
+
+    def get_birth_year(self):
+        row = self.conn.execute(
+            "SELECT setting_value FROM app_settings WHERE setting_key='birth_year'"
+        ).fetchone()
+        if not row or not row[0]:
+            return None
+        try:
+            year = int(row[0])
+            return year if year >= 1800 else None
+        except (TypeError, ValueError):
+            return None
+
+    def load_birth_year(self):
+        year = self.get_birth_year()
+        if year is None:
+            self.spinBirthYear.setValue(self.spinBirthYear.minimum())
+        else:
+            self.spinBirthYear.setValue(year)
+
+    def save_birth_year(self):
+        year = self.spinBirthYear.value()
+        if year == self.spinBirthYear.minimum():
+            self.conn.execute(
+                "DELETE FROM app_settings WHERE setting_key='birth_year'"
+            )
+            message = "Birth year cleared."
+        else:
+            self.conn.execute("""
+                INSERT INTO app_settings(setting_key, setting_value)
+                VALUES('birth_year', ?)
+                ON CONFLICT(setting_key)
+                DO UPDATE SET setting_value=excluded.setting_value
+            """, (str(year),))
+            message = f"Birth year saved as {year}."
+
+        self.conn.commit()
+        QMessageBox.information(self, "Birth year", message)
+
+    def memory_date_values(self):
+        """
+        Returns:
+        precision, sortable_start, sortable_end, year, month,
+        age_min, age_max, human-readable label.
+
+        The sortable range is only an internal ordering aid. The UI always
+        displays the actual precision, never a fake exact date.
+        """
+        mode = self.comboDatePrecision.currentText()
+
+        if mode == "Exact date":
+            qd = self.dateEntry.date()
+            ds = qd.toString("yyyy-MM-dd")
+            return "exact", ds, ds, qd.year(), qd.month(), None, None, ds
+
+        if mode == "Month known":
+            year = self.spinMemoryYear.value()
+            month = self.comboMemoryMonth.currentIndex() + 1
+            last_day = calendar.monthrange(year, month)[1]
+            start = f"{year:04d}-{month:02d}-01"
+            end = f"{year:04d}-{month:02d}-{last_day:02d}"
+            label = f"{calendar.month_name[month]} {year}"
+            return "month", start, end, year, month, None, None, label
+
+        if mode == "Year known":
+            year = self.spinMemoryYear.value()
+            return "year", f"{year:04d}-01-01", f"{year:04d}-12-31", year, None, None, None, str(year)
+
+        if mode == "Age range":
+            age_min = min(self.spinAgeMin.value(), self.spinAgeMax.value())
+            age_max = max(self.spinAgeMin.value(), self.spinAgeMax.value())
+            birth_year = self.get_birth_year()
+
+            if birth_year is not None:
+                start = f"{birth_year + age_min:04d}-01-01"
+                end = f"{birth_year + age_max:04d}-12-31"
+            else:
+                start = None
+                end = None
+
+            return (
+                "age_range", start, end, None, None,
+                age_min, age_max, f"About {age_min}–{age_max} years old"
+            )
+
+        return "unknown", None, None, None, None, None, None, "Date unknown"
+
+    @staticmethod
+    def format_memory_date(row):
+        precision = row["date_precision"] or "exact"
+
+        if precision == "exact":
+            return row["memory_start_date"] or row["entry_date"] or "Date unknown"
+
+        if precision == "month":
+            if row["memory_year"] and row["memory_month"]:
+                return f"{calendar.month_name[int(row['memory_month'])]} {row['memory_year']}"
+            return "Month unknown"
+
+        if precision == "year":
+            return str(row["memory_year"]) if row["memory_year"] else "Year unknown"
+
+        if precision == "age_range":
+            if row["age_min"] is not None and row["age_max"] is not None:
+                return f"About {row['age_min']}–{row['age_max']} years old"
+            return "Age unknown"
+
+        return "Date unknown"
+
+    # ------------------------------------------------------------------
     # Categories, tags, people
     # ------------------------------------------------------------------
     def load_categories(self):
@@ -664,15 +1000,44 @@ class JournalWindow(QMainWindow):
             QMessageBox.warning(self, "Empty entry", "Write something or add a title first.")
             return
 
-        entry_date = self.dateEntry.date().toString("yyyy-MM-dd")
-        title = title or datetime.strptime(entry_date, "%Y-%m-%d").strftime("%A, %d %B %Y")
+        (
+            precision,
+            memory_start_date,
+            memory_end_date,
+            memory_year,
+            memory_month,
+            age_min,
+            age_max,
+            date_label,
+        ) = self.memory_date_values()
+
+        # entry_date remains populated only as a backward-compatible sorting
+        # helper. It is NOT displayed as an exact date for uncertain memories.
+        entry_date = memory_start_date
+
+        title = title or date_label
         html = self.txtEditor.toHtml()
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         values = (
-            entry_date, title, html, self.txtEditor.toPlainText(),
-            self.comboMood.currentText(), self.spinRating.value(),
-            self.comboCategory.currentData(), int(self.checkFavorite.isChecked()), now
+            entry_date,
+            title,
+            html,
+            self.txtEditor.toPlainText(),
+            self.comboMood.currentText(),
+            self.spinRating.value(),
+            self.comboCategory.currentData(),
+            int(self.checkFavorite.isChecked()),
+            now,
+            precision,
+            memory_start_date,
+            memory_end_date,
+            memory_year,
+            memory_month,
+            age_min,
+            age_max,
+            self.comboDateCertainty.currentText(),
+            self.editDateNote.text().strip() or None,
         )
 
         try:
@@ -680,15 +1045,21 @@ class JournalWindow(QMainWindow):
                 cur = self.conn.execute("""
                     INSERT INTO journal_entries(
                         entry_date,title,body_html,body_plain,mood,day_rating,
-                        category_id,favorite,updated_at
-                    ) VALUES (?,?,?,?,?,?,?,?,?)
+                        category_id,favorite,updated_at,
+                        date_precision,memory_start_date,memory_end_date,
+                        memory_year,memory_month,age_min,age_max,
+                        date_certainty,date_note
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """, values)
                 self.current_entry_id = cur.lastrowid
             else:
                 self.conn.execute("""
                     UPDATE journal_entries
                     SET entry_date=?, title=?, body_html=?, body_plain=?, mood=?,
-                        day_rating=?, category_id=?, favorite=?, updated_at=?
+                        day_rating=?, category_id=?, favorite=?, updated_at=?,
+                        date_precision=?, memory_start_date=?, memory_end_date=?,
+                        memory_year=?, memory_month=?, age_min=?, age_max=?,
+                        date_certainty=?, date_note=?
                     WHERE id=?
                 """, values + (self.current_entry_id,))
 
@@ -717,7 +1088,15 @@ class JournalWindow(QMainWindow):
     def new_entry(self):
         self.current_entry_id = None
         self.pending_images.clear()
+        self.comboDatePrecision.setCurrentText("Exact date")
         self.dateEntry.setDate(QDate.currentDate())
+        self.spinMemoryYear.setValue(QDate.currentDate().year())
+        self.comboMemoryMonth.setCurrentIndex(QDate.currentDate().month() - 1)
+        self.spinAgeMin.setValue(3)
+        self.spinAgeMax.setValue(4)
+        self.comboDateCertainty.setCurrentText("Certain")
+        self.editDateNote.clear()
+        self.update_date_precision_ui()
         self.editTitle.clear()
         self.txtEditor.clear()
         self.txtEditor.setLayoutDirection(Qt.LeftToRight)
@@ -752,7 +1131,35 @@ class JournalWindow(QMainWindow):
 
         self.current_entry_id = entry_id
         self.pending_images.clear()
-        self.dateEntry.setDate(QDate.fromString(row["entry_date"], "yyyy-MM-dd"))
+
+        precision_to_ui = {
+            "exact": "Exact date",
+            "month": "Month known",
+            "year": "Year known",
+            "age_range": "Age range",
+            "unknown": "Unknown",
+        }
+        self.comboDatePrecision.setCurrentText(
+            precision_to_ui.get(row["date_precision"] or "exact", "Exact date")
+        )
+
+        actual_date = row["memory_start_date"] or row["entry_date"]
+        if actual_date:
+            self.dateEntry.setDate(QDate.fromString(actual_date, "yyyy-MM-dd"))
+
+        if row["memory_year"] is not None:
+            self.spinMemoryYear.setValue(int(row["memory_year"]))
+        if row["memory_month"] is not None:
+            self.comboMemoryMonth.setCurrentIndex(int(row["memory_month"]) - 1)
+        if row["age_min"] is not None:
+            self.spinAgeMin.setValue(int(row["age_min"]))
+        if row["age_max"] is not None:
+            self.spinAgeMax.setValue(int(row["age_max"]))
+
+        self.comboDateCertainty.setCurrentText(row["date_certainty"] or "Certain")
+        self.editDateNote.setText(row["date_note"] or "")
+        self.update_date_precision_ui()
+
         self.editTitle.setText(row["title"])
         self.comboMood.setCurrentText(row["mood"] or "")
         self.spinRating.setValue(row["day_rating"] or 5)
@@ -800,7 +1207,12 @@ class JournalWindow(QMainWindow):
             self.calendarJournal.setDateTextFormat(qd, normal)
 
         self.entry_dates = {
-            r[0] for r in self.conn.execute("SELECT DISTINCT entry_date FROM journal_entries")
+            r[0] for r in self.conn.execute("""
+                SELECT DISTINCT memory_start_date
+                FROM journal_entries
+                WHERE date_precision='exact'
+                  AND memory_start_date IS NOT NULL
+            """)
         }
         marked = QTextCharFormat()
         marked.setBackground(QColor("#DDEBE8"))
@@ -816,7 +1228,9 @@ class JournalWindow(QMainWindow):
         )
         rows = self.conn.execute("""
             SELECT id,title,mood FROM journal_entries
-            WHERE entry_date=? ORDER BY created_at
+            WHERE date_precision='exact'
+              AND memory_start_date=?
+            ORDER BY created_at
         """, (ds,)).fetchall()
 
         self.listCalendarEntries.clear()
@@ -849,21 +1263,29 @@ class JournalWindow(QMainWindow):
     def load_journal_list(self):
         needle = self.editJournalFilter.text().strip()
         sql = """
-            SELECT id,entry_date,title,mood,favorite
+            SELECT id,entry_date,title,mood,favorite,date_precision,
+                   memory_start_date,memory_end_date,memory_year,memory_month,
+                   age_min,age_max
             FROM journal_entries
         """
         params = []
         if needle:
             sql += " WHERE title LIKE ? OR body_plain LIKE ?"
             params = [f"%{needle}%", f"%{needle}%"]
-        sql += " ORDER BY entry_date DESC, created_at DESC"
+        sql += """
+            ORDER BY
+                CASE WHEN memory_start_date IS NULL THEN 1 ELSE 0 END,
+                memory_start_date DESC,
+                CASE WHEN date_precision='age_range' THEN age_min ELSE NULL END DESC,
+                created_at DESC
+        """
 
         rows = self.conn.execute(sql, params).fetchall()
         self.listEntries.clear()
         for row in rows:
             star = "★ " if row["favorite"] else ""
             item = QListWidgetItem(
-                f"{row['entry_date']}   {row['mood'] or ''}\n{star}{row['title']}"
+                f"{self.format_memory_date(row)}   {row['mood'] or ''}\n{star}{row['title']}"
             )
             item.setData(Qt.UserRole, row["id"])
             self.listEntries.addItem(item)
@@ -886,7 +1308,8 @@ class JournalWindow(QMainWindow):
             return
         self.lblReadTitle.setText(("★ " if row["favorite"] else "") + row["title"])
         self.lblReadMeta.setText(
-            f"{row['entry_date']}   •   {row['mood'] or 'No mood'}   •   "
+            f"{self.format_memory_date(row)}   •   {row['date_certainty'] or 'Certain'}   •   "
+            f"{row['mood'] or 'No mood'}   •   "
             f"{row['day_rating'] or '—'}/10   •   {row['category'] or 'Uncategorized'}"
         )
         self.set_html_with_images(self.txtReading, entry_id, row["body_html"])
@@ -903,10 +1326,15 @@ class JournalWindow(QMainWindow):
     # ------------------------------------------------------------------
     def load_gallery(self):
         rows = self.conn.execute("""
-            SELECT i.id,i.entry_id,i.image_data,i.file_name,e.entry_date,e.title
+            SELECT i.id,i.entry_id,i.image_data,i.file_name,e.entry_date,e.title,
+                   e.date_precision,e.memory_start_date,e.memory_end_date,
+                   e.memory_year,e.memory_month,e.age_min,e.age_max
             FROM entry_images i
             JOIN journal_entries e ON e.id=i.entry_id
-            ORDER BY e.entry_date DESC, i.id DESC
+            ORDER BY
+                CASE WHEN e.memory_start_date IS NULL THEN 1 ELSE 0 END,
+                e.memory_start_date DESC,
+                i.id DESC
         """).fetchall()
 
         self.listGallery.clear()
@@ -916,7 +1344,7 @@ class JournalWindow(QMainWindow):
             if pix.isNull():
                 continue
             icon = QIcon(pix.scaled(180, 130, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-            item = QListWidgetItem(icon, f"{row['entry_date']}\n{row['title']}")
+            item = QListWidgetItem(icon, f"{self.format_memory_date(row)}\n{row['title']}")
             item.setData(Qt.UserRole, row["entry_id"])
             item.setToolTip(row["file_name"] or "")
             self.listGallery.addItem(item)
@@ -963,6 +1391,8 @@ class JournalWindow(QMainWindow):
 
         rows = self.conn.execute(f"""
             SELECT e.id,e.entry_date,e.title,e.mood,e.day_rating,
+                   e.date_precision,e.memory_start_date,e.memory_end_date,
+                   e.memory_year,e.memory_month,e.age_min,e.age_max,
                    COALESCE(c.name,'') category,
                    COALESCE(GROUP_CONCAT(DISTINCT t.name),'') tags,
                    substr(replace(e.body_plain, char(10), ' '),1,170) preview
@@ -972,13 +1402,16 @@ class JournalWindow(QMainWindow):
             LEFT JOIN tags t ON t.id=et.tag_id
             WHERE {' AND '.join(clauses)}
             GROUP BY e.id
-            ORDER BY e.entry_date DESC
+            ORDER BY
+                CASE WHEN e.memory_start_date IS NULL THEN 1 ELSE 0 END,
+                e.memory_start_date DESC,
+                e.created_at DESC
         """, params).fetchall()
 
         self.tableSearch.setRowCount(len(rows))
         for r, row in enumerate(rows):
             vals = [
-                row["entry_date"], row["title"], row["mood"] or "",
+                self.format_memory_date(row), row["title"], row["mood"] or "",
                 row["day_rating"] or "", row["category"], row["tags"], row["preview"]
             ]
             for c, val in enumerate(vals):
@@ -998,19 +1431,21 @@ class JournalWindow(QMainWindow):
         today = date.today()
         md = today.strftime("%m-%d")
         rows = self.conn.execute("""
-            SELECT id,entry_date,title,mood
+            SELECT id,entry_date,title,mood,memory_start_date
             FROM journal_entries
-            WHERE substr(entry_date,6,5)=? AND entry_date<>?
-            ORDER BY entry_date DESC
+            WHERE date_precision='exact'
+              AND substr(memory_start_date,6,5)=?
+              AND memory_start_date<>?
+            ORDER BY memory_start_date DESC
         """, (md, today.isoformat())).fetchall()
 
         self.listMemories.clear()
         self.txtMemoryPreview.clear()
         self.lblMemoryHeading.setText(f"On this day — {today.strftime('%d %B')}")
         for row in rows:
-            years = today.year - int(row["entry_date"][:4])
+            years = today.year - int(row["memory_start_date"][:4])
             item = QListWidgetItem(
-                f"{years} year{'s' if years != 1 else ''} ago • {row['entry_date']} • "
+                f"{years} year{'s' if years != 1 else ''} ago • {row['memory_start_date']} • "
                 f"{row['mood'] or ''}\n{row['title']}"
             )
             item.setData(Qt.UserRole, row["id"])
@@ -1020,7 +1455,10 @@ class JournalWindow(QMainWindow):
 
     def random_memory(self):
         row = self.conn.execute("""
-            SELECT id,entry_date,title,mood FROM journal_entries
+            SELECT id,entry_date,title,mood,date_precision,
+                   memory_start_date,memory_end_date,memory_year,memory_month,
+                   age_min,age_max
+            FROM journal_entries
             ORDER BY RANDOM() LIMIT 1
         """).fetchone()
         if not row:
@@ -1028,7 +1466,7 @@ class JournalWindow(QMainWindow):
             return
         self.listMemories.clear()
         item = QListWidgetItem(
-            f"Random memory • {row['entry_date']} • {row['mood'] or ''}\n{row['title']}"
+            f"Random memory • {self.format_memory_date(row)} • {row['mood'] or ''}\n{row['title']}"
         )
         item.setData(Qt.UserRole, row["id"])
         self.listMemories.addItem(item)
@@ -1050,7 +1488,12 @@ class JournalWindow(QMainWindow):
     def calculate_current_streak(self):
         days = {
             datetime.strptime(r[0], "%Y-%m-%d").date()
-            for r in self.conn.execute("SELECT DISTINCT entry_date FROM journal_entries")
+            for r in self.conn.execute("""
+                SELECT DISTINCT memory_start_date
+                FROM journal_entries
+                WHERE date_precision='exact'
+                  AND memory_start_date IS NOT NULL
+            """)
         }
         if not days:
             return 0
@@ -1084,12 +1527,13 @@ class JournalWindow(QMainWindow):
         self.lblStatPhotos.setText(f"{photos:,}")
 
         monthly = self.conn.execute("""
-            SELECT substr(entry_date,1,7) month,
+            SELECT substr(memory_start_date,1,7) month,
                    COUNT(*) entries,
                    SUM(CASE WHEN trim(body_plain)='' THEN 0
                        ELSE length(trim(body_plain))-length(replace(trim(body_plain),' ',''))+1 END) words
             FROM journal_entries
-            GROUP BY substr(entry_date,1,7)
+            WHERE memory_start_date IS NOT NULL
+            GROUP BY substr(memory_start_date,1,7)
             ORDER BY month DESC
             LIMIT 18
         """).fetchall()
@@ -1120,10 +1564,10 @@ class JournalWindow(QMainWindow):
             return
 
         row = self.conn.execute(
-            "SELECT entry_date,title,body_html FROM journal_entries WHERE id=?", (entry_id,)
+            "SELECT entry_date,title,body_html,date_precision,memory_start_date,memory_end_date,memory_year,memory_month,age_min,age_max FROM journal_entries WHERE id=?", (entry_id,)
         ).fetchone()
         path, _ = QFileDialog.getSaveFileName(
-            self, "Export HTML", f"{row['entry_date']}_{row['title']}.html", "HTML (*.html)"
+            self, "Export HTML", f"{self.format_memory_date(row).replace(' ', '_').replace('/', '-')}_{row['title']}.html", "HTML (*.html)"
         )
         if path:
             Path(path).write_text(row["body_html"], encoding="utf-8")

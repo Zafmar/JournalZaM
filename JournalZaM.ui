@@ -87,23 +87,174 @@ QScrollArea { border:0; background:transparent; }
            <property name="spacing"><number>12</number></property>
            <item>
             <widget class="QFrame" name="metaCard">
-             <layout class="QGridLayout">
-              <property name="leftMargin"><number>18</number></property><property name="topMargin"><number>15</number></property><property name="rightMargin"><number>18</number></property><property name="bottomMargin"><number>15</number></property>
-              <item row="0" column="0"><widget class="QLabel" name="lDate"><property name="text"><string>Date</string></property></widget></item>
-              <item row="0" column="1"><widget class="QLabel" name="lTitle"><property name="text"><string>Title</string></property></widget></item>
-              <item row="0" column="2"><widget class="QLabel" name="lMood"><property name="text"><string>Mood</string></property></widget></item>
-              <item row="0" column="3"><widget class="QLabel" name="lRating"><property name="text"><string>Day rating</string></property></widget></item>
-              <item row="1" column="0"><widget class="QDateEdit" name="dateEntry"><property name="calendarPopup"><bool>true</bool></property><property name="displayFormat"><string>yyyy-MM-dd</string></property></widget></item>
-              <item row="1" column="1"><widget class="QLineEdit" name="editTitle"><property name="placeholderText"><string>Give this memory a title...</string></property></widget></item>
-              <item row="1" column="2"><widget class="QComboBox" name="comboMood"><item><property name="text"><string>😄 Great</string></property></item><item><property name="text"><string>🙂 Good</string></property></item><item><property name="text"><string>😐 Neutral</string></property></item><item><property name="text"><string>😔 Low</string></property></item><item><property name="text"><string>😡 Angry</string></property></item><item><property name="text"><string>😴 Tired</string></property></item><item><property name="text"><string>🤩 Excited</string></property></item></widget></item>
-              <item row="1" column="3"><widget class="QSpinBox" name="spinRating"><property name="minimum"><number>1</number></property><property name="maximum"><number>10</number></property><property name="value"><number>7</number></property><property name="suffix"><string> / 10</string></property></widget></item>
-              <item row="2" column="0"><widget class="QLabel" name="lCategory"><property name="text"><string>Category</string></property></widget></item>
-              <item row="2" column="1"><widget class="QLabel" name="lTags"><property name="text"><string>Tags</string></property></widget></item>
-              <item row="2" column="2"><widget class="QLabel" name="lPeople"><property name="text"><string>People</string></property></widget></item>
-              <item row="2" column="3"><widget class="QCheckBox" name="checkFavorite"><property name="text"><string>★ Favorite memory</string></property></widget></item>
-              <item row="3" column="0"><widget class="QComboBox" name="comboCategory"/></item>
-              <item row="3" column="1"><widget class="QLineEdit" name="editTags"><property name="placeholderText"><string>travel, books, idea</string></property></widget></item>
-              <item row="3" column="2"><widget class="QLineEdit" name="editPeople"><property name="placeholderText"><string>Names, separated by commas</string></property></widget></item>
+             <layout class="QGridLayout" name="metaGrid">
+              <property name="leftMargin"><number>18</number></property>
+              <property name="topMargin"><number>15</number></property>
+              <property name="rightMargin"><number>18</number></property>
+              <property name="bottomMargin"><number>15</number></property>
+              <property name="horizontalSpacing"><number>12</number></property>
+              <property name="verticalSpacing"><number>8</number></property>
+
+              <item row="0" column="0">
+               <widget class="QLabel" name="lPrecision">
+                <property name="text"><string>When did this happen?</string></property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLabel" name="lTitle">
+                <property name="text"><string>Title</string></property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QLabel" name="lMood">
+                <property name="text"><string>Mood</string></property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QLabel" name="lRating">
+                <property name="text"><string>Day rating</string></property>
+               </widget>
+              </item>
+
+              <item row="1" column="0">
+               <widget class="QComboBox" name="comboDatePrecision">
+                <item><property name="text"><string>Exact date</string></property></item>
+                <item><property name="text"><string>Month known</string></property></item>
+                <item><property name="text"><string>Year known</string></property></item>
+                <item><property name="text"><string>Age range</string></property></item>
+                <item><property name="text"><string>Unknown</string></property></item>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="editTitle">
+                <property name="placeholderText"><string>Give this memory a title...</string></property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QComboBox" name="comboMood">
+                <item><property name="text"><string>😄 Great</string></property></item>
+                <item><property name="text"><string>🙂 Good</string></property></item>
+                <item><property name="text"><string>😐 Neutral</string></property></item>
+                <item><property name="text"><string>😔 Low</string></property></item>
+                <item><property name="text"><string>😡 Angry</string></property></item>
+                <item><property name="text"><string>😴 Tired</string></property></item>
+                <item><property name="text"><string>🤩 Excited</string></property></item>
+               </widget>
+              </item>
+              <item row="1" column="3">
+               <widget class="QSpinBox" name="spinRating">
+                <property name="minimum"><number>1</number></property>
+                <property name="maximum"><number>10</number></property>
+                <property name="value"><number>7</number></property>
+                <property name="suffix"><string> / 10</string></property>
+               </widget>
+              </item>
+
+              <item row="2" column="0" colspan="4">
+               <widget class="QFrame" name="memoryDateCard">
+                <property name="styleSheet">
+                 <string>QFrame#memoryDateCard{background:#F7FAFA;border:1px solid #DCE6E8;border-radius:12px;}</string>
+                </property>
+                <layout class="QGridLayout" name="memoryDateGrid">
+                 <property name="leftMargin"><number>12</number></property>
+                 <property name="topMargin"><number>10</number></property>
+                 <property name="rightMargin"><number>12</number></property>
+                 <property name="bottomMargin"><number>10</number></property>
+                 <property name="horizontalSpacing"><number>10</number></property>
+                 <property name="verticalSpacing"><number>7</number></property>
+
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblExactDate"><property name="text"><string>Exact date</string></property></widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QDateEdit" name="dateEntry">
+                   <property name="calendarPopup"><bool>true</bool></property>
+                   <property name="displayFormat"><string>yyyy-MM-dd</string></property>
+                  </widget>
+                 </item>
+
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="lblMonth"><property name="text"><string>Month</string></property></widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QComboBox" name="comboMemoryMonth">
+                   <item><property name="text"><string>January</string></property></item>
+                   <item><property name="text"><string>February</string></property></item>
+                   <item><property name="text"><string>March</string></property></item>
+                   <item><property name="text"><string>April</string></property></item>
+                   <item><property name="text"><string>May</string></property></item>
+                   <item><property name="text"><string>June</string></property></item>
+                   <item><property name="text"><string>July</string></property></item>
+                   <item><property name="text"><string>August</string></property></item>
+                   <item><property name="text"><string>September</string></property></item>
+                   <item><property name="text"><string>October</string></property></item>
+                   <item><property name="text"><string>November</string></property></item>
+                   <item><property name="text"><string>December</string></property></item>
+                  </widget>
+                 </item>
+                 <item row="1" column="2">
+                  <widget class="QLabel" name="lblYear"><property name="text"><string>Year</string></property></widget>
+                 </item>
+                 <item row="1" column="3">
+                  <widget class="QSpinBox" name="spinMemoryYear">
+                   <property name="minimum"><number>1800</number></property>
+                   <property name="maximum"><number>2200</number></property>
+                   <property name="value"><number>2000</number></property>
+                  </widget>
+                 </item>
+
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="lblAgeFrom"><property name="text"><string>Age from</string></property></widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QSpinBox" name="spinAgeMin">
+                   <property name="minimum"><number>0</number></property>
+                   <property name="maximum"><number>120</number></property>
+                   <property name="value"><number>3</number></property>
+                  </widget>
+                 </item>
+                 <item row="2" column="2">
+                  <widget class="QLabel" name="lblAgeTo"><property name="text"><string>Age to</string></property></widget>
+                 </item>
+                 <item row="2" column="3">
+                  <widget class="QSpinBox" name="spinAgeMax">
+                   <property name="minimum"><number>0</number></property>
+                   <property name="maximum"><number>120</number></property>
+                   <property name="value"><number>4</number></property>
+                  </widget>
+                 </item>
+
+                 <item row="3" column="0">
+                  <widget class="QLabel" name="lblCertainty"><property name="text"><string>Certainty</string></property></widget>
+                 </item>
+                 <item row="3" column="1">
+                  <widget class="QComboBox" name="comboDateCertainty">
+                   <item><property name="text"><string>Certain</string></property></item>
+                   <item><property name="text"><string>Fairly certain</string></property></item>
+                   <item><property name="text"><string>Approximate</string></property></item>
+                   <item><property name="text"><string>Very uncertain</string></property></item>
+                  </widget>
+                 </item>
+                 <item row="3" column="2">
+                  <widget class="QLabel" name="lblDateNote"><property name="text"><string>Date note</string></property></widget>
+                 </item>
+                 <item row="3" column="3">
+                  <widget class="QLineEdit" name="editDateNote">
+                   <property name="placeholderText"><string>e.g. probably before kindergarten...</string></property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+
+              <item row="3" column="0"><widget class="QLabel" name="lCategory"><property name="text"><string>Category</string></property></widget></item>
+              <item row="3" column="1"><widget class="QLabel" name="lTags"><property name="text"><string>Tags</string></property></widget></item>
+              <item row="3" column="2"><widget class="QLabel" name="lPeople"><property name="text"><string>People</string></property></widget></item>
+              <item row="3" column="3"><widget class="QCheckBox" name="checkFavorite"><property name="text"><string>★ Favorite memory</string></property></widget></item>
+
+              <item row="4" column="0"><widget class="QComboBox" name="comboCategory"/></item>
+              <item row="4" column="1"><widget class="QLineEdit" name="editTags"><property name="placeholderText"><string>travel, books, idea</string></property></widget></item>
+              <item row="4" column="2"><widget class="QLineEdit" name="editPeople"><property name="placeholderText"><string>Names, separated by commas</string></property></widget></item>
              </layout>
             </widget>
            </item>
@@ -242,6 +393,13 @@ QScrollArea { border:0; background:transparent; }
             <item><widget class="QLabel" name="lblSettingsTitle"><property name="text"><string>Settings &amp; data</string></property><property name="styleSheet"><string>font-size:23px;font-weight:850;</string></property></widget></item>
             <item><widget class="QLabel" name="lblDatabasePath"><property name="text"><string>Database: —</string></property><property name="wordWrap"><bool>true</bool></property></widget></item>
             <item><widget class="QLabel" name="lblPrivacy"><property name="text"><string>Your journal stays local. Rich text and image bytes are stored in SQLite.</string></property></widget></item>
+            <item>
+             <layout class="QHBoxLayout" name="birthYearLayout">
+              <item><widget class="QLabel" name="lblBirthYear"><property name="text"><string>Birth year (used only to place age-range memories approximately on the timeline)</string></property></widget></item>
+              <item><widget class="QSpinBox" name="spinBirthYear"><property name="minimum"><number>1800</number></property><property name="maximum"><number>2200</number></property><property name="specialValueText"><string>Not set</string></property><property name="value"><number>1800</number></property></widget></item>
+              <item><widget class="QPushButton" name="btnSaveBirthYear"><property name="text"><string>Save birth year</string></property></widget></item>
+             </layout>
+            </item>
             <item><layout class="QHBoxLayout"><item><widget class="QPushButton" name="btnExportHtml"><property name="text"><string>Export selected entry as HTML</string></property></widget></item><item><widget class="QPushButton" name="btnBackupDb"><property name="text"><string>Backup database</string></property></widget></item><item><spacer name="ssp"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item></layout></item>
             <item><spacer name="settingsSpace"><property name="orientation"><enum>Qt::Vertical</enum></property></spacer></item>
            </layout></widget></item>
