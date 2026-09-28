@@ -1,5 +1,5 @@
 # JournalZaM - local PyQt5 journaling app
-# Keep JournalZaM.py, JournalZaM.ui and JournalZaM.db in the same folder.
+# Keep JournalZaM.py, JournalZaM.ui and JournalZaM_schema.sql in the same folder.
 
 import os
 import sys
@@ -199,7 +199,7 @@ class JournalWindow(QMainWindow):
             self.btnSearch, self.btnMemories, self.btnStats, self.btnSettings
         ]
         self.page_titles = {
-            0: ("Write", "Put the memory into words — text, people, tags and pictures."),
+            0: ("Write", "Put the day into words — text, mood, people, tags and pictures."),
             1: ("Calendar", "See your journal grow across months and years."),
             2: ("Journal", "Read your memories like a private digital book."),
             3: ("Gallery", "All the pictures hidden inside your journal."),
@@ -222,6 +222,7 @@ class JournalWindow(QMainWindow):
         self.lblToday.setText(datetime.now().strftime("%A, %d %B %Y"))
         self.lblDatabasePath.setText(f"Database: {DB_FILE}")
 
+        self.load_categories()
         self.refresh_all()
         self.show_page(0)
 
@@ -245,6 +246,9 @@ class JournalWindow(QMainWindow):
                 title             TEXT NOT NULL DEFAULT '',
                 body_html         TEXT NOT NULL DEFAULT '',
                 body_plain        TEXT NOT NULL DEFAULT '',
+                mood              TEXT,
+                day_rating        INTEGER,
+                category_id       INTEGER,
                 favorite          INTEGER DEFAULT 0,
                 created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -272,6 +276,9 @@ class JournalWindow(QMainWindow):
             "title": "TEXT NOT NULL DEFAULT ''",
             "body_html": "TEXT NOT NULL DEFAULT ''",
             "body_plain": "TEXT NOT NULL DEFAULT ''",
+            "mood": "TEXT",
+            "day_rating": "INTEGER",
+            "category_id": "INTEGER",
             "favorite": "INTEGER DEFAULT 0",
             "created_at": "DATETIME DEFAULT CURRENT_TIMESTAMP",
             "updated_at": "DATETIME DEFAULT CURRENT_TIMESTAMP",
@@ -295,6 +302,12 @@ class JournalWindow(QMainWindow):
 
         # Auxiliary tables.
         self.conn.executescript("""
+            CREATE TABLE IF NOT EXISTS categories (
+                id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                name      TEXT NOT NULL UNIQUE,
+                color     TEXT,
+                active    INTEGER DEFAULT 1
+            );
 
             CREATE TABLE IF NOT EXISTS tags (
                 id        INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -362,6 +375,21 @@ class JournalWindow(QMainWindow):
                 ON entry_images(entry_id);
         """)
 
+        # Seed default categories without replacing user-created ones.
+        default_categories = [
+            ("Personal", "#6F9488"),
+            ("Work", "#6E86B7"),
+            ("Travel", "#B68B55"),
+            ("Ideas", "#9B7AB8"),
+            ("Books & Culture", "#B97878"),
+            ("Health & Wellbeing", "#6D9A72"),
+        ]
+
+        self.conn.executemany("""
+            INSERT OR IGNORE INTO categories(name, color, active)
+            VALUES (?, ?, 1)
+        """, default_categories)
+
         # Migrate old exact-date rows into the new flexible date fields.
         self.conn.execute("""
             UPDATE journal_entries
@@ -416,6 +444,7 @@ class JournalWindow(QMainWindow):
             self.k1,
             self.k2,
             self.k3,
+            self.k4,
             self.k5,
             self.settingsCard,
         ):
@@ -480,6 +509,7 @@ class JournalWindow(QMainWindow):
                 self.k1,
                 self.k2,
                 self.k3,
+                self.k4,
                 self.k5,
                 self.settingsCard,
                 self.btnSaveEntry,
@@ -532,19 +562,24 @@ class JournalWindow(QMainWindow):
         self.txtEditor.setTabStopWidth(32)
 
     def setup_tables(self):
-        self.tableSearch.setColumnCount(4)
+        self.tableSearch.setColumnCount(7)
         self.tableSearch.setHorizontalHeaderLabels(
-            ["Date", "Title", "Tags", "Preview"]
+            ["Date", "Title", "Mood", "Rating", "Category", "Tags", "Preview"]
         )
         self.tableSearch.verticalHeader().setVisible(False)
         self.tableSearch.setSelectionBehavior(self.tableSearch.SelectRows)
         self.tableSearch.setEditTriggers(self.tableSearch.NoEditTriggers)
-        self.tableSearch.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
+        self.tableSearch.horizontalHeader().setSectionResizeMode(6, QHeaderView.Stretch)
 
         self.tableMonthlyStats.setColumnCount(3)
         self.tableMonthlyStats.setHorizontalHeaderLabels(["Month", "Entries", "Words"])
         self.tableMonthlyStats.verticalHeader().setVisible(False)
         self.tableMonthlyStats.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        self.tableMoodStats.setColumnCount(2)
+        self.tableMoodStats.setHorizontalHeaderLabels(["Mood", "Entries"])
+        self.tableMoodStats.verticalHeader().setVisible(False)
+        self.tableMoodStats.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
     def connect_signals(self):
         # Editor
@@ -924,6 +959,24 @@ class JournalWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Categories, tags, people
     # ------------------------------------------------------------------
+    def load_categories(self):
+        rows = self.conn.execute(
+            "SELECT id, name FROM categories WHERE active=1 ORDER BY name COLLATE NOCASE"
+        ).fetchall()
+
+        self.comboCategory.clear()
+        self.comboSearchCategory.clear()
+        self.comboSearchCategory.addItem("Any category", None)
+
+        for row in rows:
+            self.comboCategory.addItem(row["name"], row["id"])
+            self.comboSearchCategory.addItem(row["name"], row["id"])
+
+        moods = ["😄 Great", "🙂 Good", "😐 Neutral", "😔 Low", "😡 Angry", "😴 Tired", "🤩 Excited"]
+        self.comboSearchMood.clear()
+        self.comboSearchMood.addItem("Any mood")
+        self.comboSearchMood.addItems(moods)
+
     def save_names(self, entry_id, text, table, relation_table, relation_fk):
         names = sorted({x.strip() for x in text.split(",") if x.strip()})
         self.conn.execute(f"DELETE FROM {relation_table} WHERE entry_id=?", (entry_id,))
@@ -971,6 +1024,9 @@ class JournalWindow(QMainWindow):
             title,
             html,
             self.txtEditor.toPlainText(),
+            self.comboMood.currentText(),
+            self.spinRating.value(),
+            self.comboCategory.currentData(),
             int(self.checkFavorite.isChecked()),
             now,
             precision,
@@ -988,32 +1044,27 @@ class JournalWindow(QMainWindow):
             if self.current_entry_id is None:
                 cur = self.conn.execute("""
                     INSERT INTO journal_entries(
-                        entry_date,title,body_html,body_plain,favorite,updated_at,
+                        entry_date,title,body_html,body_plain,mood,day_rating,
+                        category_id,favorite,updated_at,
                         date_precision,memory_start_date,memory_end_date,
                         memory_year,memory_month,age_min,age_max,
                         date_certainty,date_note
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """, values)
                 self.current_entry_id = cur.lastrowid
             else:
                 self.conn.execute("""
                     UPDATE journal_entries
-                    SET entry_date=?, title=?, body_html=?, body_plain=?,
-                        favorite=?, updated_at=?, date_precision=?,
-                        memory_start_date=?, memory_end_date=?, memory_year=?,
-                        memory_month=?, age_min=?, age_max=?,
+                    SET entry_date=?, title=?, body_html=?, body_plain=?, mood=?,
+                        day_rating=?, category_id=?, favorite=?, updated_at=?,
+                        date_precision=?, memory_start_date=?, memory_end_date=?,
+                        memory_year=?, memory_month=?, age_min=?, age_max=?,
                         date_certainty=?, date_note=?
                     WHERE id=?
                 """, values + (self.current_entry_id,))
 
-            self.save_names(
-                self.current_entry_id, self.editTags.text(),
-                "tags", "entry_tags", "tag_id"
-            )
-            self.save_names(
-                self.current_entry_id, self.editPeople.text(),
-                "people", "entry_people", "person_id"
-            )
+            self.save_names(self.current_entry_id, self.editTags.text(), "tags", "entry_tags", "tag_id")
+            self.save_names(self.current_entry_id, self.editPeople.text(), "people", "entry_people", "person_id")
 
             # Persist newly inserted images. Existing images remain until entry deletion.
             for key, img in self.pending_images.items():
@@ -1051,7 +1102,11 @@ class JournalWindow(QMainWindow):
         self.txtEditor.setLayoutDirection(Qt.LeftToRight)
         self.editTags.clear()
         self.editPeople.clear()
+        self.spinRating.setValue(7)
+        self.comboMood.setCurrentIndex(1)
         self.checkFavorite.setChecked(False)
+        if self.comboCategory.count():
+            self.comboCategory.setCurrentIndex(0)
         self.update_word_count()
 
     def delete_entry(self):
@@ -1106,7 +1161,13 @@ class JournalWindow(QMainWindow):
         self.update_date_precision_ui()
 
         self.editTitle.setText(row["title"])
+        self.comboMood.setCurrentText(row["mood"] or "")
+        self.spinRating.setValue(row["day_rating"] or 5)
         self.checkFavorite.setChecked(bool(row["favorite"]))
+
+        idx = self.comboCategory.findData(row["category_id"])
+        if idx >= 0:
+            self.comboCategory.setCurrentIndex(idx)
 
         self.editTags.setText(", ".join(r[0] for r in self.conn.execute("""
             SELECT t.name FROM tags t JOIN entry_tags et ON et.tag_id=t.id
@@ -1166,7 +1227,7 @@ class JournalWindow(QMainWindow):
             self.calendarJournal.selectedDate().toString("dddd, dd MMMM yyyy")
         )
         rows = self.conn.execute("""
-            SELECT id,title FROM journal_entries
+            SELECT id,title,mood FROM journal_entries
             WHERE date_precision='exact'
               AND memory_start_date=?
             ORDER BY created_at
@@ -1175,7 +1236,7 @@ class JournalWindow(QMainWindow):
         self.listCalendarEntries.clear()
         self.txtCalendarPreview.clear()
         for row in rows:
-            item = QListWidgetItem(row["title"])
+            item = QListWidgetItem(f"{row['mood'] or ''}  {row['title']}")
             item.setData(Qt.UserRole, row["id"])
             self.listCalendarEntries.addItem(item)
         if rows:
@@ -1202,7 +1263,7 @@ class JournalWindow(QMainWindow):
     def load_journal_list(self):
         needle = self.editJournalFilter.text().strip()
         sql = """
-            SELECT id,entry_date,title,favorite,date_precision,
+            SELECT id,entry_date,title,mood,favorite,date_precision,
                    memory_start_date,memory_end_date,memory_year,memory_month,
                    age_min,age_max
             FROM journal_entries
@@ -1224,7 +1285,7 @@ class JournalWindow(QMainWindow):
         for row in rows:
             star = "★ " if row["favorite"] else ""
             item = QListWidgetItem(
-                f"{self.format_memory_date(row)}\n{star}{row['title']}"
+                f"{self.format_memory_date(row)}   {row['mood'] or ''}\n{star}{row['title']}"
             )
             item.setData(Qt.UserRole, row["id"])
             self.listEntries.addItem(item)
@@ -1236,27 +1297,21 @@ class JournalWindow(QMainWindow):
             self.lblReadTitle.setText("Select an entry")
             self.txtReading.clear()
             return
-
         entry_id = current.data(Qt.UserRole)
-        row = self.conn.execute(
-            "SELECT * FROM journal_entries WHERE id=?",
-            (entry_id,)
-        ).fetchone()
+        row = self.conn.execute("""
+            SELECT e.*, COALESCE(c.name,'') category
+            FROM journal_entries e
+            LEFT JOIN categories c ON c.id=e.category_id
+            WHERE e.id=?
+        """, (entry_id,)).fetchone()
         if not row:
             return
-
-        self.lblReadTitle.setText(
-            ("★ " if row["favorite"] else "") + row["title"]
+        self.lblReadTitle.setText(("★ " if row["favorite"] else "") + row["title"])
+        self.lblReadMeta.setText(
+            f"{self.format_memory_date(row)}   •   {row['date_certainty'] or 'Certain'}   •   "
+            f"{row['mood'] or 'No mood'}   •   "
+            f"{row['day_rating'] or '—'}/10   •   {row['category'] or 'Uncategorized'}"
         )
-
-        meta_parts = [
-            self.format_memory_date(row),
-            row["date_certainty"] or "Certain",
-        ]
-        if row["date_note"]:
-            meta_parts.append(row["date_note"])
-
-        self.lblReadMeta.setText("   •   ".join(meta_parts))
         self.set_html_with_images(self.txtReading, entry_id, row["body_html"])
         self.btnEditSelected.setProperty("entry_id", entry_id)
 
@@ -1303,6 +1358,8 @@ class JournalWindow(QMainWindow):
     # ------------------------------------------------------------------
     def run_search(self):
         needle = self.editSearch.text().strip()
+        mood = self.comboSearchMood.currentText()
+        category_id = self.comboSearchCategory.currentData()
 
         clauses = ["1=1"]
         params = []
@@ -1321,21 +1378,26 @@ class JournalWindow(QMainWindow):
             )""")
             like = f"%{needle}%"
             params.extend([like, like, like, like])
-
+        if mood != "Any mood":
+            clauses.append("e.mood=?")
+            params.append(mood)
+        if category_id is not None:
+            clauses.append("e.category_id=?")
+            params.append(category_id)
         if self.checkSearchImages.isChecked():
-            clauses.append(
-                "EXISTS(SELECT 1 FROM entry_images i WHERE i.entry_id=e.id)"
-            )
+            clauses.append("EXISTS(SELECT 1 FROM entry_images i WHERE i.entry_id=e.id)")
         if self.checkSearchFavorite.isChecked():
             clauses.append("e.favorite=1")
 
         rows = self.conn.execute(f"""
-            SELECT e.id,e.entry_date,e.title,
+            SELECT e.id,e.entry_date,e.title,e.mood,e.day_rating,
                    e.date_precision,e.memory_start_date,e.memory_end_date,
                    e.memory_year,e.memory_month,e.age_min,e.age_max,
+                   COALESCE(c.name,'') category,
                    COALESCE(GROUP_CONCAT(DISTINCT t.name),'') tags,
                    substr(replace(e.body_plain, char(10), ' '),1,170) preview
             FROM journal_entries e
+            LEFT JOIN categories c ON c.id=e.category_id
             LEFT JOIN entry_tags et ON et.entry_id=e.id
             LEFT JOIN tags t ON t.id=et.tag_id
             WHERE {' AND '.join(clauses)}
@@ -1349,10 +1411,8 @@ class JournalWindow(QMainWindow):
         self.tableSearch.setRowCount(len(rows))
         for r, row in enumerate(rows):
             vals = [
-                self.format_memory_date(row),
-                row["title"],
-                row["tags"],
-                row["preview"],
+                self.format_memory_date(row), row["title"], row["mood"] or "",
+                row["day_rating"] or "", row["category"], row["tags"], row["preview"]
             ]
             for c, val in enumerate(vals):
                 item = QTableWidgetItem(str(val))
@@ -1371,7 +1431,7 @@ class JournalWindow(QMainWindow):
         today = date.today()
         md = today.strftime("%m-%d")
         rows = self.conn.execute("""
-            SELECT id,entry_date,title,memory_start_date
+            SELECT id,entry_date,title,mood,memory_start_date
             FROM journal_entries
             WHERE date_precision='exact'
               AND substr(memory_start_date,6,5)=?
@@ -1381,38 +1441,32 @@ class JournalWindow(QMainWindow):
 
         self.listMemories.clear()
         self.txtMemoryPreview.clear()
-        self.lblMemoryHeading.setText(
-            f"On this day — {today.strftime('%d %B')}"
-        )
-
+        self.lblMemoryHeading.setText(f"On this day — {today.strftime('%d %B')}")
         for row in rows:
             years = today.year - int(row["memory_start_date"][:4])
             item = QListWidgetItem(
-                f"{years} year{'s' if years != 1 else ''} ago • "
-                f"{row['memory_start_date']}\n{row['title']}"
+                f"{years} year{'s' if years != 1 else ''} ago • {row['memory_start_date']} • "
+                f"{row['mood'] or ''}\n{row['title']}"
             )
             item.setData(Qt.UserRole, row["id"])
             self.listMemories.addItem(item)
-
         if rows:
             self.listMemories.setCurrentRow(0)
 
     def random_memory(self):
         row = self.conn.execute("""
-            SELECT id,entry_date,title,date_precision,
+            SELECT id,entry_date,title,mood,date_precision,
                    memory_start_date,memory_end_date,memory_year,memory_month,
                    age_min,age_max
             FROM journal_entries
             ORDER BY RANDOM() LIMIT 1
         """).fetchone()
-
         if not row:
             QMessageBox.information(self, "Memories", "Write a few entries first.")
             return
-
         self.listMemories.clear()
         item = QListWidgetItem(
-            f"Random memory • {self.format_memory_date(row)}\n{row['title']}"
+            f"Random memory • {self.format_memory_date(row)} • {row['mood'] or ''}\n{row['title']}"
         )
         item.setData(Qt.UserRole, row["id"])
         self.listMemories.addItem(item)
@@ -1459,48 +1513,43 @@ class JournalWindow(QMainWindow):
             SELECT COUNT(*) entries,
                    COALESCE(SUM(
                        CASE WHEN trim(body_plain)='' THEN 0
-                       ELSE length(trim(body_plain))
-                            - length(replace(trim(body_plain),' ',''))
-                            + 1
-                       END
-                   ),0) words
+                       ELSE length(trim(body_plain)) - length(replace(trim(body_plain),' ','')) + 1 END
+                   ),0) words,
+                   ROUND(AVG(day_rating),1) avg_rating
             FROM journal_entries
         """).fetchone()
-
-        photos = self.conn.execute(
-            "SELECT COUNT(*) FROM entry_images"
-        ).fetchone()[0]
+        photos = self.conn.execute("SELECT COUNT(*) FROM entry_images").fetchone()[0]
 
         self.lblStatEntries.setText(f"{row['entries']:,}")
         self.lblStatWords.setText(f"{row['words']:,}")
-        self.lblStatStreak.setText(
-            f"{self.calculate_current_streak()} days"
-        )
+        self.lblStatStreak.setText(f"{self.calculate_current_streak()} days")
+        self.lblStatRating.setText(str(row["avg_rating"] if row["avg_rating"] is not None else "—"))
         self.lblStatPhotos.setText(f"{photos:,}")
 
         monthly = self.conn.execute("""
             SELECT substr(memory_start_date,1,7) month,
                    COUNT(*) entries,
-                   SUM(
-                       CASE WHEN trim(body_plain)='' THEN 0
-                       ELSE length(trim(body_plain))
-                            - length(replace(trim(body_plain),' ',''))
-                            + 1
-                       END
-                   ) words
+                   SUM(CASE WHEN trim(body_plain)='' THEN 0
+                       ELSE length(trim(body_plain))-length(replace(trim(body_plain),' ',''))+1 END) words
             FROM journal_entries
             WHERE memory_start_date IS NOT NULL
             GROUP BY substr(memory_start_date,1,7)
             ORDER BY month DESC
             LIMIT 18
         """).fetchall()
-
         self.tableMonthlyStats.setRowCount(len(monthly))
         for r, data in enumerate(monthly):
             for c, value in enumerate(data):
-                self.tableMonthlyStats.setItem(
-                    r, c, QTableWidgetItem(str(value or 0))
-                )
+                self.tableMonthlyStats.setItem(r, c, QTableWidgetItem(str(value or 0)))
+
+        moods = self.conn.execute("""
+            SELECT COALESCE(mood,'No mood'),COUNT(*)
+            FROM journal_entries GROUP BY mood ORDER BY COUNT(*) DESC
+        """).fetchall()
+        self.tableMoodStats.setRowCount(len(moods))
+        for r, data in enumerate(moods):
+            for c, value in enumerate(data):
+                self.tableMoodStats.setItem(r, c, QTableWidgetItem(str(value)))
 
     # ------------------------------------------------------------------
     # Export / backup
