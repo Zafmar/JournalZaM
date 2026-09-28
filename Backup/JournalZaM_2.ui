@@ -290,121 +290,17 @@ QScrollArea { border:0; background:transparent; }
          <!-- JOURNAL -->
          <widget class="QWidget" name="pageJournal">
           <layout class="QHBoxLayout">
-           <property name="spacing"><number>18</number></property>
-
-           <item>
-            <widget class="QFrame" name="journalListCard">
-             <property name="minimumSize"><size><width>420</width><height>0</height></size></property>
-             <property name="maximumSize"><size><width>520</width><height>16777215</height></size></property>
-             <property name="styleSheet">
-              <string>QFrame#journalListCard{background:#F9FBFB;border:1px solid #D8E2E5;border-radius:18px;}</string>
-             </property>
-             <layout class="QVBoxLayout">
-              <property name="leftMargin"><number>16</number></property>
-              <property name="topMargin"><number>16</number></property>
-              <property name="rightMargin"><number>16</number></property>
-              <property name="bottomMargin"><number>16</number></property>
-              <property name="spacing"><number>10</number></property>
-
-              <item>
-               <widget class="QLabel" name="lblJournalListHeading">
-                <property name="text"><string>Your memories</string></property>
-                <property name="styleSheet">
-                 <string>font-size:20px;font-weight:900;color:#2D4148;</string>
-                </property>
-               </widget>
-              </item>
-
-              <item>
-               <widget class="QLabel" name="lblJournalListHint">
-                <property name="text"><string>Scroll through the moments you have saved.</string></property>
-                <property name="styleSheet">
-                 <string>font-size:11px;color:#7A8C92;</string>
-                </property>
-               </widget>
-              </item>
-
-              <item>
-               <widget class="QLineEdit" name="editJournalFilter">
-                <property name="placeholderText"><string>Filter titles or text...</string></property>
-               </widget>
-              </item>
-
-              <item>
-               <widget class="QListWidget" name="listEntries">
-                <property name="styleSheet">
-                 <string>
-QListWidget#listEntries {
-    background:transparent;
-    border:none;
-    padding:4px 3px 8px 3px;
-}
-QListWidget#listEntries::item {
-    background:transparent;
-    border:none;
-    padding:0px;
-}
-QListWidget#listEntries::item:selected {
-    background:transparent;
-}
-                 </string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-
-           <item>
-            <widget class="QFrame" name="readingCard">
-             <property name="styleSheet">
-              <string>QFrame#readingCard{background:white;border:1px solid #D8E2E5;border-radius:18px;}</string>
-             </property>
-             <layout class="QVBoxLayout">
-              <property name="leftMargin"><number>24</number></property>
-              <property name="topMargin"><number>22</number></property>
-              <property name="rightMargin"><number>24</number></property>
-              <property name="bottomMargin"><number>20</number></property>
-              <property name="spacing"><number>9</number></property>
-
-              <item>
-               <widget class="QLabel" name="lblReadTitle">
-                <property name="text"><string>Select an entry</string></property>
-                <property name="wordWrap"><bool>true</bool></property>
-                <property name="styleSheet">
-                 <string>font-size:26px;font-weight:900;color:#2A3D44;</string>
-                </property>
-               </widget>
-              </item>
-
-              <item>
-               <widget class="QLabel" name="lblReadMeta">
-                <property name="text"><string>—</string></property>
-                <property name="wordWrap"><bool>true</bool></property>
-                <property name="styleSheet">
-                 <string>color:#788A90;font-size:11px;font-weight:600;</string>
-                </property>
-               </widget>
-              </item>
-
-              <item>
-               <widget class="QTextEdit" name="txtReading">
-                <property name="readOnly"><bool>true</bool></property>
-                <property name="styleSheet">
-                 <string>QTextEdit#txtReading{background:#FCFDFD;border:1px solid #E2E9EB;border-radius:12px;padding:16px;font-size:13px;}</string>
-                </property>
-               </widget>
-              </item>
-
-              <item>
-               <layout class="QHBoxLayout">
-                <item><widget class="QPushButton" name="btnEditSelected"><property name="text"><string>Edit this entry</string></property></widget></item>
-                <item><spacer name="jrsp"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item>
-               </layout>
-              </item>
-             </layout>
-            </widget>
-           </item>
+           <property name="spacing"><number>16</number></property>
+           <item><widget class="QFrame" name="journalListCard"><property name="minimumSize"><size><width>390</width><height>0</height></size></property><property name="maximumSize"><size><width>470</width><height>16777215</height></size></property><layout class="QVBoxLayout">
+            <item><widget class="QLineEdit" name="editJournalFilter"><property name="placeholderText"><string>Filter titles or text...</string></property></widget></item>
+            <item><widget class="QListWidget" name="listEntries"/></item>
+           </layout></widget></item>
+           <item><widget class="QFrame" name="readingCard"><layout class="QVBoxLayout">
+            <item><widget class="QLabel" name="lblReadTitle"><property name="text"><string>Select an entry</string></property><property name="styleSheet"><string>font-size:24px;font-weight:900;</string></property></widget></item>
+            <item><widget class="QLabel" name="lblReadMeta"><property name="text"><string>—</string></property><property name="styleSheet"><string>color:#6F7F85;</string></property></widget></item>
+            <item><widget class="QTextEdit" name="txtReading"><property name="readOnly"><bool>true</bool></property></widget></item>
+            <item><layout class="QHBoxLayout"><item><widget class="QPushButton" name="btnEditSelected"><property name="text"><string>Edit this entry</string></property></widget></item><item><spacer name="jrsp"><property name="orientation"><enum>Qt::Horizontal</enum></property></spacer></item></layout></item>
+           </layout></widget></item>
           </layout>
          </widget>
 

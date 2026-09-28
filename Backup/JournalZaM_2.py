@@ -23,8 +23,7 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QMessageBox, QFileDialog, QColorDialog,
-    QInputDialog, QTableWidgetItem, QHeaderView, QListWidgetItem, QLineEdit,
-    QWidget, QLabel, QVBoxLayout, QHBoxLayout
+    QInputDialog, QTableWidgetItem, QHeaderView, QListWidgetItem, QLineEdit
 )
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -531,10 +530,6 @@ class JournalWindow(QMainWindow):
         self.comboFontSize.setCurrentText("12")
         self.txtEditor.setFont(QFont("Segoe UI", 12))
         self.txtEditor.setTabStopWidth(32)
-
-        # Journal list is rendered as a feed of individual memory cards.
-        self.listEntries.setSpacing(12)
-        self.listEntries.setUniformItemSizes(False)
 
     def setup_tables(self):
         self.tableSearch.setColumnCount(4)
@@ -1204,123 +1199,18 @@ class JournalWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Journal reading view
     # ------------------------------------------------------------------
-    def _journal_card_style(self, background, selected=False):
-        border = "#5F897D" if selected else "#D8E3E5"
-        border_width = 2 if selected else 1
-        return f"""
-            QWidget#journalEntryCard {{
-                background: {background};
-                border: {border_width}px solid {border};
-                border-radius: 16px;
-            }}
-            QLabel {{
-                background: transparent;
-                border: none;
-            }}
-        """
-
-    def _create_journal_card(self, row, index):
-        """Build one visually separated journal/memory card."""
-        palette = [
-            "#EEF6F3",  # soft sage
-            "#F1F5FB",  # soft blue
-            "#FBF5EA",  # warm sand
-            "#F7F1FA",  # soft lilac
-        ]
-        background = palette[index % len(palette)]
-
-        card = QWidget()
-        card.setObjectName("journalEntryCard")
-        card.setProperty("baseColor", background)
-        card.setStyleSheet(self._journal_card_style(background, False))
-
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(18, 15, 18, 14)
-        layout.setSpacing(8)
-
-        # Title at the top.
-        title_row = QHBoxLayout()
-        title_row.setContentsMargins(0, 0, 0, 0)
-        title_row.setSpacing(8)
-
-        title = QLabel(row["title"] or "Untitled memory")
-        title.setWordWrap(True)
-        title.setStyleSheet(
-            "font-size:15px; font-weight:850; color:#263A42;"
-        )
-        title_row.addWidget(title, 1)
-
-        if row["favorite"]:
-            favorite = QLabel("★")
-            favorite.setToolTip("Favorite memory")
-            favorite.setStyleSheet(
-                "font-size:17px; font-weight:900; color:#B68B55;"
-            )
-            title_row.addWidget(favorite, 0, Qt.AlignTop)
-
-        layout.addLayout(title_row)
-
-        # A short text glimpse makes scrolling feel more like browsing memories.
-        preview_text = (row["body_plain"] or "").replace("\n", " ").strip()
-        preview_text = re.sub(r"\s+", " ", preview_text)
-        if len(preview_text) > 145:
-            preview_text = preview_text[:142].rstrip() + "…"
-
-        if preview_text:
-            preview = QLabel(preview_text)
-            preview.setWordWrap(True)
-            preview.setMaximumHeight(42)
-            preview.setStyleSheet(
-                "font-size:11px; color:#61747B; line-height:1.35;"
-            )
-            layout.addWidget(preview)
-
-        # Subtle separator before the date.
-        separator = QWidget()
-        separator.setFixedHeight(1)
-        separator.setStyleSheet(
-            "background:rgba(90,115,120,35); border:none;"
-        )
-        layout.addWidget(separator)
-
-        # Date deliberately sits at the bottom.
-        date_label = QLabel(self.format_memory_date(row))
-        date_label.setStyleSheet(
-            "font-size:10px; font-weight:700; color:#819096;"
-        )
-        layout.addWidget(date_label)
-
-        return card
-
-    def _refresh_journal_card_selection(self):
-        """Give the selected memory card a stronger visual outline."""
-        current = self.listEntries.currentItem()
-
-        for index in range(self.listEntries.count()):
-            item = self.listEntries.item(index)
-            card = self.listEntries.itemWidget(item)
-            if card is None:
-                continue
-
-            background = card.property("baseColor") or "#FFFFFF"
-            card.setStyleSheet(
-                self._journal_card_style(background, item is current)
-            )
-
     def load_journal_list(self):
         needle = self.editJournalFilter.text().strip()
         sql = """
-            SELECT id,entry_date,title,body_plain,favorite,date_precision,
+            SELECT id,entry_date,title,favorite,date_precision,
                    memory_start_date,memory_end_date,memory_year,memory_month,
                    age_min,age_max
             FROM journal_entries
         """
         params = []
-
         if needle:
             sql += " WHERE title LIKE ? OR body_plain LIKE ?"
             params = [f"%{needle}%", f"%{needle}%"]
-
         sql += """
             ORDER BY
                 CASE WHEN memory_start_date IS NULL THEN 1 ELSE 0 END,
@@ -1330,28 +1220,18 @@ class JournalWindow(QMainWindow):
         """
 
         rows = self.conn.execute(sql, params).fetchall()
-
         self.listEntries.clear()
-
-        for index, row in enumerate(rows):
-            item = QListWidgetItem()
+        for row in rows:
+            star = "★ " if row["favorite"] else ""
+            item = QListWidgetItem(
+                f"{self.format_memory_date(row)}\n{star}{row['title']}"
+            )
             item.setData(Qt.UserRole, row["id"])
-
-            card = self._create_journal_card(row, index)
-
-            # Give the card enough vertical breathing room.
-            item.setSizeHint(QSize(0, 118 if row["body_plain"] else 92))
-
             self.listEntries.addItem(item)
-            self.listEntries.setItemWidget(item, card)
-
         if rows:
             self.listEntries.setCurrentRow(0)
-            self._refresh_journal_card_selection()
 
     def journal_item_changed(self, current, previous):
-        self._refresh_journal_card_selection()
-
         if not current:
             self.lblReadTitle.setText("Select an entry")
             self.txtReading.clear()
